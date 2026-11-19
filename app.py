@@ -41,6 +41,11 @@ MEMBER_THEMES = {
         "bg_color": "#FDEDEC",   # 연한 빨강 배경
         "badge": "🧛‍♀️ 리제"
     },
+    "유니버스": {
+        "color": "#16A085",      # 청록색 계열
+        "bg_color": "#E8F8F5",   # 연한 청록 배경
+        "badge": "✨ 유니버스"
+    },
     "시로": {
         "color": "#7F8C8D",      # 그레이 계열
         "bg_color": "#F2F4F4",
@@ -50,6 +55,10 @@ MEMBER_THEMES = {
 
 # 3. 초기 노래 데이터 (단위: 회 / original=True는 오리지널 곡)
 INITIAL_SONGS = [
+    # 유니버스 (단체곡)
+    {"멤버": "유니버스", "곡명": "Stars Align", "조회수": 1410000, "original": True},
+    {"멤버": "유니버스", "곡명": "마음악보", "조회수": 990000, "original": True},
+
     # 유니
     {"멤버": "유니", "곡명": "긍지높은 아이돌", "조회수": 1190000, "original": False},
     {"멤버": "유니", "곡명": "베텔기우스", "조회수": 1720000, "original": False},

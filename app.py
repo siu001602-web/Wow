@@ -31,11 +31,6 @@ MEMBER_THEMES = {
         "bg_color": "#FFF0F3",
         "badge": "🏫 히나"
     },
-    "시로": {
-        "color": "#7F8C8D",      # 그레이 계열
-        "bg_color": "#F2F4F4",
-        "badge": "🐱 시로"
-    },
 }
 
 # 3. 초기 노래 데이터 (단위: 회 / original=True는 오리지널 곡)
@@ -154,9 +149,9 @@ def live_chart():
         rank = idx + 1
         member = song["멤버"]
         
-        # 'Dear my fairy' 곡은 히나 & 시로 특수 배지 적용
+        # 'Dear my fairy' 곡은 히나 & 마시로 특수 듀엣 배지 적용
         if song["곡명"] == "Dear my fairy":
-            badge_html = '<span style="background: linear-gradient(135deg, #FF8DA1, #7F8C8D); color: white; padding: 4px 10px; border-radius: 15px; font-size: 0.85em; font-weight: bold;">🏫히나 & 🐱시로</span>'
+            badge_html = '<span style="background: linear-gradient(135deg, #FF8DA1, #607D8B); color: white; padding: 4px 10px; border-radius: 15px; font-size: 0.85em; font-weight: bold;">🏫히나 & 🐱마시로</span>'
             left_border_color = "#FF8DA1"
             bg_color = "#FFF5F7"
         else:

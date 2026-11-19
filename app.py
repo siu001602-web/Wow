@@ -51,6 +51,11 @@ MEMBER_THEMES = {
         "bg_color": "#EAFAF1",   # 연한 연두색 배경
         "badge": "🔫 나나"
     },
+    "린": {
+        "color": "#BDC3C7",      # 흰색/실버 계열
+        "bg_color": "#F8F9F9",   # 연한 흰/회색 배경
+        "badge": "👗 린"
+    },
     "유니버스": {
         "color": "#16A085",      # 청록색 계열
         "bg_color": "#E8F8F5",   # 연한 청록 배경
@@ -285,6 +290,47 @@ INITIAL_SONGS = [
     {"멤버": "나나", "곡명": "논브레스 오블리주", "조회수": 1150000, "original": False},
     {"멤버": "나나", "곡명": "브레인 롯", "조회수": 980000, "original": False},
     {"멤버": "나나", "곡명": "발랄라이카", "조회수": 610000, "original": False},
+
+    # 린
+    {"멤버": "린", "곡명": "Maid My Way", "조회수": 2590000, "original": True},
+    {"멤버": "린", "곡명": "불꽃(with 나나)", "조회수": 560000, "original": True},
+    {"멤버": "린", "곡명": "유령도쿄", "조회수": 5510000, "original": False},
+    {"멤버": "린", "곡명": "안녕, 또 언젠가", "조회수": 3820000, "original": False},
+    {"멤버": "린", "곡명": "Rumor", "조회수": 2990000, "original": False},
+    {"멤버": "린", "곡명": "무희", "조회수": 4680000, "original": False},
+    {"멤버": "린", "곡명": "사랑 감기에 실려", "조회수": 3200000, "original": False},
+    {"멤버": "린", "곡명": "Overdose", "조회수": 3520000, "original": False},
+    {"멤버": "린", "곡명": "back number", "조회수": 3350000, "original": False},
+    {"멤버": "린", "곡명": "Specialz", "조회수": 1960000, "original": False},
+    {"멤버": "린", "곡명": "꿈의 카니발", "조회수": 1530000, "original": False},
+    {"멤버": "린", "곡명": "To X", "조회수": 5000000, "original": False},
+    {"멤버": "린", "곡명": "X/Y/Z", "조회수": 5570000, "original": False},
+    {"멤버": "린", "곡명": "BOW AND ARROW", "조회수": 2920000, "original": False},
+    {"멤버": "린", "곡명": "Unbreakable Sphere", "조회수": 770000, "original": False},
+    {"멤버": "린", "곡명": "Stand By You", "조회수": 1910000, "original": False},
+    {"멤버": "린", "곡명": "만찬가", "조회수": 2450000, "original": False},
+    {"멤버": "린", "곡명": "별자리가 될 수 있다면", "조회수": 2260000, "original": False},
+    {"멤버": "린", "곡명": "Play", "조회수": 4610000, "original": False},
+    {"멤버": "린", "곡명": "전방향 미소녀", "조회수": 1330000, "original": False},
+    {"멤버": "린", "곡명": "IRIS OUT", "조회수": 2820000, "original": False},
+    {"멤버": "린", "곡명": "STAY", "조회수": 4210000, "original": False},
+    {"멤버": "린", "곡명": "All I Want For Christmas is you", "조회수": 2540000, "original": False},
+    {"멤버": "린", "곡명": "사신", "조회수": 2720000, "original": False},
+    {"멤버": "린", "곡명": "카가리비토", "조회수": 1000000, "original": False},
+    {"멤버": "린", "곡명": "Alzo", "조회수": 1860000, "original": False},
+    {"멤버": "린", "곡명": "Oh....", "조회수": 1510000, "original": False},
+    {"멤버": "린", "곡명": "아이네 클라이네", "조회수": 1070000, "original": False},
+    {"멤버": "린", "곡명": "댄스홀", "조회수": 2320000, "original": False},
+    {"멤버": "린", "곡명": "물떼새", "조회수": 2150000, "original": False},
+    {"멤버": "린", "곡명": "소녀레이", "조회수": 680000, "original": False},
+    {"멤버": "린", "곡명": "불가행력", "조회수": 1310000, "original": False},
+    {"멤버": "린", "곡명": "아 프리오리", "조회수": 1270000, "original": False},
+    {"멤버": "린", "곡명": "Chocolate box(with 유니)", "조회수": 560000, "original": False},
+    {"멤버": "린", "곡명": "Dynamite(with 네리사)", "조회수": 1510000, "original": False},
+    {"멤버": "린", "곡명": "잿빛과 푸름(with 리코)", "조회수": 2090000, "original": False},
+    {"멤버": "린", "곡명": "Work(with 나나)", "조회수": 1090000, "original": False},
+    {"멤버": "린", "곡명": "쿵쿵 앞으로(with 부키)", "조회수": 630000, "original": False},
+    {"멤버": "린", "곡명": "아이덴티티(with 부키)", "조회수": 2040000, "original": False},
 ]
 
 # 4. 세션 상태(게임 데이터) 초기화
@@ -338,14 +384,12 @@ with col2:
         # 30분 = 1800초 / 3초 틱 = 600번의 틱을 한 번에 시뮬레이션
         for _ in range(600):
             st.session_state.tick += 1
-            # 1분(20틱) 단위 순위 스냅샷 갱신 처리
             if st.session_state.tick % 20 == 0:
                 current_sorted_for_snapshot = sorted(st.session_state.songs, key=lambda x: x["조회수"], reverse=True)
                 snapshot_ranks = {(song["멤버"], song["곡명"]): idx + 1 for idx, song in enumerate(current_sorted_for_snapshot)}
                 for song in st.session_state.songs:
                     song["prev_rank_1m"] = snapshot_ranks[(song["멤버"], song["곡명"])]
             
-            # 조회수 일괄 증가 (스킵 중에는 가벼운 일반 증가 및 인급동 확률 반영)
             for song in st.session_state.songs:
                 if random.random() < 0.001:
                     inc = random.randint(10000, 200000)
@@ -475,8 +519,9 @@ def live_chart():
             bg_color = "#FFF5F7"
         else:
             theme = MEMBER_THEMES.get(member, {"color": "#888888", "bg_color": "#F0F0F0", "badge": member})
-            badge_text_color = "#333" if member in ["부키", "나나"] else "white"
-            badge_html = f'<span style="background-color: {theme["color"]}; color: {badge_text_color}; padding: 4px 10px; border-radius: 15px; font-size: 0.85em; font-weight: bold;">{theme["badge"]}</span>'
+            # 린, 부키, 나나처럼 밝은 배경의 배지는 글자색을 어둡게 처리
+            badge_text_color = "#333" if member in ["부키", "나나", "린"] else "white"
+            badge_html = f'<span style="background-color: {theme["color"]}; color: {badge_text_color}; border: 1px solid #ddd; padding: 4px 10px; border-radius: 15px; font-size: 0.85em; font-weight: bold;">{theme["badge"]}</span>'
             left_border_color = theme["color"]
             bg_color = theme["bg_color"]
 

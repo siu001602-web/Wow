@@ -120,17 +120,20 @@ INITIAL_SONGS = [
 # 4. 세션 상태(게임 데이터) 초기화
 def init_songs():
     sorted_init = sorted(INITIAL_SONGS, key=lambda x: x["조회수"], reverse=True)
-    return [dict(song, 변동=0, prev_rank_1m=i+1, is_trending=False) for i, song in enumerate(sorted_init)]
+    # 초기 순위(initial_rank) 필드 추가
+    return [dict(song, 변동=0, prev_rank_1m=i+1, initial_rank=i+1, is_trending=False) for i, song in enumerate(sorted_init)]
 
 if "songs" not in st.session_state:
     st.session_state.songs = init_songs()
     st.session_state.tick = 0
     st.session_state.is_running = True
-    st.session_state.recent_trending = [] # 이번 턴에 인급동이 뜬 곡 정보 저장용
+    st.session_state.recent_trending = []
 else:
     for i, song in enumerate(st.session_state.songs):
         if "prev_rank_1m" not in song:
             song["prev_rank_1m"] = i + 1
+        if "initial_rank" not in song:
+            song["initial_rank"] = i + 1
         if "변동" not in song:
             song["변동"] = 0
         if "original" not in song:
@@ -205,7 +208,6 @@ def live_chart():
                     display: flex;
                     align-items: center;
                     gap: 10px;
-                    animation: fadeIn 0.5s;
                 ">
                     🔥 <span><b>[{song_name}]</b>이(가) 인급동의 여파로 <b>+{inc_val:,}회</b> 증가했습니다!</span>
                 </div>
@@ -223,6 +225,7 @@ def live_chart():
     for idx, song in enumerate(current_sorted):
         rank = idx + 1
         member = song["멤버"]
+        init_rank = song.get("initial_rank", rank)
         
         # 특수 듀엣 배지 처리
         if song["곡명"] == "Dear my fairy":
@@ -270,8 +273,8 @@ def live_chart():
                 box-shadow: 0 1px 3px rgba(0,0,0,0.08);
             ">
                 <div style="display: flex; align-items: center; gap: 15px;">
-                    <div style="font-size: 1.3em; font-weight: 800; width: 35px; text-align: center; color: #222;">
-                        {rank}
+                    <div style="font-size: 1.2em; font-weight: 800; width: 60px; text-align: center; color: #222;">
+                        {rank}위 <span style="font-size: 0.75em; color: gray; font-weight: normal;">(초기 {init_rank})</span>
                     </div>
                     <div style="width: 45px; text-align: center;">
                         {rank_diff_html}

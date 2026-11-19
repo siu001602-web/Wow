@@ -58,13 +58,19 @@ INITIAL_SONGS = [
 # 4. 세션 상태(게임 데이터) 초기화
 def init_songs():
     sorted_init = sorted(INITIAL_SONGS, key=lambda x: x["조회수"], reverse=True)
-    # 숫자로 시작하던 키 이름을 영문으로 수정 (prev_rank_1m)
     return [dict(song, 변동=0, prev_rank_1m=i+1) for i, song in enumerate(sorted_init)]
 
 if "songs" not in st.session_state:
     st.session_state.songs = init_songs()
     st.session_state.tick = 0
     st.session_state.is_running = True
+else:
+    # 기존 세션에 키가 누락되어 있을 경우 안전하게 보정
+    for i, song in enumerate(st.session_state.songs):
+        if "prev_rank_1m" not in song:
+            song["prev_rank_1m"] = i + 1
+        if "변동" not in song:
+            song["변동"] = 0
 
 # 조회수 포맷팅 함수
 def format_views(views):
@@ -115,11 +121,12 @@ def live_chart():
         member = song["멤버"]
         theme = MEMBER_THEMES.get(member, {"color": "#888888", "bg_color": "#F0F0F0", "badge": member})
 
-        # 1분 전 순위와 현재 순위 비교
+        # 1분 전 순위와 현재 순위 비교 (.get으로 안전하게 가져옴)
         if st.session_state.tick < 20:
             rank_diff_html = '<span style="color: gray; font-size: 0.85em;">-</span>'
         else:
-            diff = song["prev_rank_1m"] - rank
+            prev_rank = song.get("prev_rank_1m", rank)
+            diff = prev_rank - rank
             if diff > 0:
                 rank_diff_html = f'<span style="color: #E74C3C; font-weight: bold; font-size: 0.85em;">▲ {diff}</span>'
             elif diff < 0:

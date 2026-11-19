@@ -9,7 +9,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# 2. 멤버별 테마 색상 및 스타일 정의 (나나: 히나 색상 적용 / 히나: 검은색 배경 적용)
+# 2. 멤버별 테마 색상 및 스타일 정의
 MEMBER_THEMES = {
     "유니": {
         "color": "#9B72CF",
@@ -69,7 +69,7 @@ MEMBER_THEMES = {
     },
 }
 
-# 3. 초기 노래 데이터 (단위: 회 / original=True는 오리지널 곡)
+# 3. 초기 노래 데이터 (단위: 회 / 부키의 5곡 제외 완료)
 INITIAL_SONGS = [
     # 유니버스 (단체곡)
     {"멤버": "유니버스", "곡명": "Stars Align", "조회수": 1410000, "original": True},
@@ -229,7 +229,7 @@ INITIAL_SONGS = [
     {"멤버": "리제", "곡명": "심월과 달의 노래", "조회수": 590000, "original": False},
     {"멤버": "리제", "곡명": "로스트원의 호곡", "조회수": 1900000, "original": False},
 
-    # 부키
+    # 부키 (제외할 5곡 제외 완료)
     {"멤버": "부키", "곡명": "베리베리스트로베리", "조회수": 1370000, "original": True},
     {"멤버": "부키", "곡명": "너에게 메롱", "조회수": 7870000, "original": False},
     {"멤버": "부키", "곡명": "여우비", "조회수": 5110000, "original": False},
@@ -251,11 +251,6 @@ INITIAL_SONGS = [
     {"멤버": "부키", "곡명": "친애하는 소년이여", "조회수": 1660000, "original": False},
     {"멤버": "부키", "곡명": "mosi mosi?", "조회수": 590000, "original": False},
     {"멤버": "부키", "곡명": "혁명도중", "조회수": 900000, "original": False},
-    {"멤버": "부키", "곡명": "호시아이[4k]", "조회수": 240000, "original": False},
-    {"멤버": "부키", "곡명": "StaRt[4k]", "조회수": 240000, "original": False},
-    {"멤버": "부키", "곡명": "신의 뜻대로[4k] (with 린,리코,나나)", "조회수": 1380000, "original": False},
-    {"멤버": "부키", "곡명": "잡어[4k] (with 시로)", "조회수": 170000, "original": False},
-    {"멤버": "부키", "곡명": "숨바꼭질[4k]", "조회수": 330000, "original": False},
 
     # 나나
     {"멤버": "나나", "곡명": "Hush trap", "조회수": 1150000, "original": True},
@@ -514,7 +509,6 @@ def live_chart():
             badge_html = f'<span style="background-color: {theme["color"]}; color: {badge_text_color}; border: 1px solid #ddd; padding: 4px 10px; border-radius: 15px; font-size: 0.85em; font-weight: bold;">{theme["badge"]}</span>'
             left_border_color = theme["color"]
             bg_color = theme["bg_color"]
-            # 히나는 검은색 배경이므로 글자색을 하얗게 조정
             text_color = "white" if member == "히나" else "#111"
 
         original_tag = ' <span style="background-color: #FFD700; color: #333; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold; margin-left: 6px;">✨ 오리지널</span>' if song.get("original", False) else ''

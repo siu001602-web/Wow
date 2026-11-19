@@ -183,15 +183,11 @@ def live_chart():
         rank = idx + 1
         member = song["멤버"]
         
-        # 특수 듀엣 배지 처리
+        # 'Dear my fairy'만 히나×마시로 특수 듀엣 배지 유지, 나머지는 멤버 기본 테마 적용
         if song["곡명"] == "Dear my fairy":
             badge_html = '<span style="background: linear-gradient(135deg, #FF8DA1, #607D8B); color: white; padding: 4px 10px; border-radius: 15px; font-size: 0.85em; font-weight: bold;">🏫히나 & 🐱마시로</span>'
             left_border_color = "#FF8DA1"
             bg_color = "#FFF5F7"
-        elif song["곡명"] == "사랑하고 있는거야(with 타비)":
-            badge_html = '<span style="background: linear-gradient(135deg, #607D8B, #2980B9); color: white; padding: 4px 10px; border-radius: 15px; font-size: 0.85em; font-weight: bold;">🐱마시로 & 🧭타비</span>'
-            left_border_color = "#2980B9"
-            bg_color = "#EAF2F8"
         else:
             theme = MEMBER_THEMES.get(member, {"color": "#888888", "bg_color": "#F0F0F0", "badge": member})
             badge_html = f'<span style="background-color: {theme["color"]}; color: white; padding: 4px 10px; border-radius: 15px; font-size: 0.85em; font-weight: bold;">{theme["badge"]}</span>'

@@ -58,8 +58,8 @@ INITIAL_SONGS = [
 # 4. 세션 상태(게임 데이터) 초기화
 def init_songs():
     sorted_init = sorted(INITIAL_SONGS, key=lambda x: x["조회수"], reverse=True)
-    # 1분 전 순위(초기에는 시작 순위와 동일) 기록 속성 추가
-    return [dict(song, 변동=0, 1분전순위=i+1) for i, song in enumerate(sorted_init)]
+    # 숫자로 시작하던 키 이름을 영문으로 수정 (prev_rank_1m)
+    return [dict(song, 변동=0, prev_rank_1m=i+1) for i, song in enumerate(sorted_init)]
 
 if "songs" not in st.session_state:
     st.session_state.songs = init_songs()
@@ -93,7 +93,7 @@ def live_chart():
             current_sorted_for_snapshot = sorted(st.session_state.songs, key=lambda x: x["조회수"], reverse=True)
             snapshot_ranks = {(song["멤버"], song["곡명"]): idx + 1 for idx, song in enumerate(current_sorted_for_snapshot)}
             for song in st.session_state.songs:
-                song["1분전순위"] = snapshot_ranks[(song["멤버"], song["곡명"])]
+                song["prev_rank_1m"] = snapshot_ranks[(song["멤버"], song["곡명"])]
 
         # 각 곡마다 100 ~ 10,000 조회수 랜덤 증가
         for song in st.session_state.songs:
@@ -115,11 +115,11 @@ def live_chart():
         member = song["멤버"]
         theme = MEMBER_THEMES.get(member, {"color": "#888888", "bg_color": "#F0F0F0", "badge": member})
 
-        # 1분 전 순위와 현재 순위 비교 (1분 동안의 변동 폭)
+        # 1분 전 순위와 현재 순위 비교
         if st.session_state.tick < 20:
             rank_diff_html = '<span style="color: gray; font-size: 0.85em;">-</span>'
         else:
-            diff = song["1분전순위"] - rank
+            diff = song["prev_rank_1m"] - rank
             if diff > 0:
                 rank_diff_html = f'<span style="color: #E74C3C; font-weight: bold; font-size: 0.85em;">▲ {diff}</span>'
             elif diff < 0:

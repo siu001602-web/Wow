@@ -36,6 +36,11 @@ MEMBER_THEMES = {
         "bg_color": "#FFF0F3",
         "badge": "🏫 히나"
     },
+    "리제": {
+        "color": "#C0392B",      # 진한 빨강 계열
+        "bg_color": "#FDEDEC",   # 연한 빨강 배경
+        "badge": "🧛‍♀️ 리제"
+    },
     "시로": {
         "color": "#7F8C8D",      # 그레이 계열
         "bg_color": "#F2F4F4",
@@ -155,6 +160,49 @@ INITIAL_SONGS = [
     {"멤버": "히나", "곡명": "내일 또 보자", "조회수": 680000, "original": False},
     {"멤버": "히나", "곡명": "아틀란티스 소녀", "조회수": 450000, "original": False},
     {"멤버": "히나", "곡명": "타상연화", "조회수": 610000, "original": False},
+
+    # 리제
+    {"멤버": "리제", "곡명": "월드 오브 탱크", "조회수": 820000, "original": True},
+    {"멤버": "리제", "곡명": "Festa!", "조회수": 1600000, "original": True},
+    {"멤버": "리제", "곡명": "괴물", "조회수": 7900000, "original": False},
+    {"멤버": "리제", "곡명": "나라는 것", "조회수": 3650000, "original": False},
+    {"멤버": "리제", "곡명": "stranger", "조회수": 2070000, "original": False},
+    {"멤버": "리제", "곡명": "tayori", "조회수": 1340000, "original": False},
+    {"멤버": "리제", "곡명": "절정찬가", "조회수": 3240000, "original": False},
+    {"멤버": "리제", "곡명": "선잠", "조회수": 6600000, "original": False},
+    {"멤버": "리제", "곡명": "괴수의 꽃노래", "조회수": 4330000, "original": False},
+    {"멤버": "리제", "곡명": "Melt", "조회수": 4470000, "original": False},
+    {"멤버": "리제", "곡명": "프라이드 혁명", "조회수": 2410000, "original": False},
+    {"멤버": "리제", "곡명": "Drowning", "조회수": 12520000, "original": False},
+    {"멤버": "리제", "곡명": "Hit on shot", "조회수": 2740000, "original": True},
+    {"멤버": "리제", "곡명": "밀월", "조회수": 1070000, "original": False},
+    {"멤버": "리제", "곡명": "Viva La Vida", "조회수": 2470000, "original": False},
+    {"멤버": "리제", "곡명": "끝나지 않은 노래", "조회수": 750000, "original": False},
+    {"멤버": "리제", "곡명": "제이팝 매쉬업!", "조회수": 2290000, "original": False},
+    {"멤버": "리제", "곡명": "APT(with 린)", "조회수": 2450000, "original": False},
+    {"멤버": "리제", "곡명": "내일의 밤하늘 초계반", "조회수": 11540000, "original": False},
+    {"멤버": "리제", "곡명": "벛꽃,너,그리고 나", "조회수": 2920000, "original": False},
+    {"멤버": "리제", "곡명": "뱀파이어", "조회수": 3160000, "original": False},
+    {"멤버": "리제", "곡명": "취한 줄을 모르고", "조회수": 2620000, "original": False},
+    {"멤버": "리제", "곡명": "Golden(with 린, 나나)", "조회수": 4040000, "original": False},
+    {"멤버": "리제", "곡명": "SHANTI", "조회수": 1120000, "original": False},
+    {"멤버": "리제", "곡명": "Surges", "조회수": 5360000, "original": False},
+    {"멤버": "리제", "곡명": "프로포즈", "조회수": 2240000, "original": False},
+    {"멤버": "리제", "곡명": "바니걸", "조회수": 2610000, "original": False},
+    {"멤버": "리제", "곡명": "가면무도회", "조회수": 520000, "original": False},
+    {"멤버": "리제", "곡명": "JANE DOE", "조회수": 1440000, "original": False},
+    {"멤버": "리제", "곡명": "star walkin'", "조회수": 1010000, "original": False},
+    {"멤버": "리제", "곡명": "출항", "조회수": 17180000, "original": False},
+    {"멤버": "리제", "곡명": "케세라세라", "조회수": 3010000, "original": False},
+    {"멤버": "리제", "곡명": "주름 맞추기", "조회수": 850000, "original": False},
+    {"멤버": "리제", "곡명": "Stellar stellar", "조회수": 1110000, "original": False},
+    {"멤버": "리제", "곡명": "orion", "조회수": 1160000, "original": False},
+    {"멤버": "리제", "곡명": "Hollowness", "조회수": 990000, "original": False},
+    {"멤버": "리제", "곡명": "무대에 서서", "조회수": 670000, "original": False},
+    {"멤버": "리제", "곡명": "청록", "조회수": 1950000, "original": False},
+    {"멤버": "리제", "곡명": "미랫빛 라이더", "조회수": 780000, "original": False},
+    {"멤버": "리제", "곡명": "심월과 달의 노래", "조회수": 590000, "original": False},
+    {"멤버": "리제", "곡명": "로스트원의 호곡", "조회수": 1900000, "original": False},
 ]
 
 # 4. 세션 상태(게임 데이터) 초기화
@@ -167,8 +215,8 @@ if "songs" not in st.session_state:
     st.session_state.tick = 0
     st.session_state.is_running = True
     st.session_state.recent_trending = []
-    st.session_state.active_live_member = None  # 현재 스페셜 라이브 중인 멤버
-    st.session_state.live_timer = 0             # 라이브 남은 틱 수
+    st.session_state.active_live_member = None
+    st.session_state.live_timer = 0
 else:
     for i, song in enumerate(st.session_state.songs):
         if "prev_rank_1m" not in song:

@@ -46,6 +46,11 @@ MEMBER_THEMES = {
         "bg_color": "#FEF9E7",   # 연한 노란색 배경
         "badge": "🦊 부키"
     },
+    "나나": {
+        "color": "#27AE60",      # 연두색 계열
+        "bg_color": "#EAFAF1",   # 연한 연두색 배경
+        "badge": "🔫 나나"
+    },
     "유니버스": {
         "color": "#16A085",      # 청록색 계열
         "bg_color": "#E8F8F5",   # 연한 청록 배경
@@ -240,6 +245,41 @@ INITIAL_SONGS = [
     {"멤버": "부키", "곡명": "친애하는 소년이여", "조회수": 1660000, "original": False},
     {"멤버": "부키", "곡명": "mosi mosi?", "조회수": 590000, "original": False},
     {"멤버": "부키", "곡명": "혁명도중", "조회수": 900000, "original": False},
+
+    # 나나
+    {"멤버": "나나", "곡명": "Hush trap", "조회수": 1150000, "original": True},
+    {"멤버": "나나", "곡명": "Born to run", "조회수": 1930000, "original": True},
+    {"멤버": "나나", "곡명": "가짜 얼굴", "조회수": 3690000, "original": False},
+    {"멤버": "나나", "곡명": "푸른 산호초", "조회수": 1450000, "original": False},
+    {"멤버": "나나", "곡명": "Some like it hot", "조회수": 4600000, "original": False},
+    {"멤버": "나나", "곡명": "신 같네", "조회수": 2670000, "original": False},
+    {"멤버": "나나", "곡명": "비행정", "조회수": 6250000, "original": False},
+    {"멤버": "나나", "곡명": "실•부•프레지던트", "조회수": 1330000, "original": False},
+    {"멤버": "나나", "곡명": "Beyond the way(with 리코,린)", "조회수": 2680000, "original": False},
+    {"멤버": "나나", "곡명": "역몽(with 린)", "조회수": 2860000, "original": False},
+    {"멤버": "나나", "곡명": "모니터링", "조회수": 2030000, "original": False},
+    {"멤버": "나나", "곡명": "Grand Escape(with 린,부키,리코)", "조회수": 1900000, "original": False},
+    {"멤버": "나나", "곡명": "Enemy", "조회수": 4690000, "original": False},
+    {"멤버": "나나", "곡명": "summertime", "조회수": 580000, "original": False},
+    {"멤버": "나나", "곡명": "걘 아니야", "조회수": 3080000, "original": False},
+    {"멤버": "나나", "곡명": "죽는게 나아", "조회수": 1340000, "original": False},
+    {"멤버": "나나", "곡명": "Summer", "조회수": 2400000, "original": False},
+    {"멤버": "나나", "곡명": "울려퍼져라(with 부키)", "조회수": 1170000, "original": False},
+    {"멤버": "나나", "곡명": "JANE DOE", "조회수": 600000, "original": False},
+    {"멤버": "나나", "곡명": "수평선", "조회수": 2430000, "original": False},
+    {"멤버": "나나", "곡명": "TOMBOY", "조회수": 1410000, "original": False},
+    {"멤버": "나나", "곡명": "JOKER(with 히나)", "조회수": 1220000, "original": False},
+    {"멤버": "나나", "곡명": "Rain", "조회수": 2230000, "original": False},
+    {"멤버": "나나", "곡명": "Yin and Yang", "조회수": 640000, "original": False},
+    {"멤버": "나나", "곡명": "죄와 벌", "조회수": 730000, "original": False},
+    {"멤버": "나나", "곡명": "One last kiss", "조회수": 850000, "original": False},
+    {"멤버": "나나", "곡명": "Deja vu", "조회수": 500000, "original": False},
+    {"멤버": "나나", "곡명": "drivers license", "조회수": 530000, "original": False},
+    {"멤버": "나나", "곡명": "Loveit?", "조회수": 910000, "original": False},
+    {"멤버": "나나", "곡명": "희극", "조회수": 780000, "original": False},
+    {"멤버": "나나", "곡명": "논브레스 오블리주", "조회수": 1150000, "original": False},
+    {"멤버": "나나", "곡명": "브레인 롯", "조회수": 980000, "original": False},
+    {"멤버": "나나", "곡명": "발랄라이카", "조회수": 610000, "original": False},
 ]
 
 # 4. 세션 상태(게임 데이터) 초기화
@@ -408,7 +448,7 @@ def live_chart():
             bg_color = "#FFF5F7"
         else:
             theme = MEMBER_THEMES.get(member, {"color": "#888888", "bg_color": "#F0F0F0", "badge": member})
-            badge_text_color = "#333" if member == "부키" else "white"
+            badge_text_color = "#333" if member in ["부키", "나나"] else "white"
             badge_html = f'<span style="background-color: {theme["color"]}; color: {badge_text_color}; padding: 4px 10px; border-radius: 15px; font-size: 0.85em; font-weight: bold;">{theme["badge"]}</span>'
             left_border_color = theme["color"]
             bg_color = theme["bg_color"]

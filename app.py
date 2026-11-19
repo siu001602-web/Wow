@@ -48,8 +48,8 @@ MEMBER_THEMES = {
         "badge": "🦊 부키"
     },
     "나나": {
-        "color": "#FF8DA1",      # 히나 색상 적용
-        "bg_color": "#FFF0F3",   # 히나 연한 핑크 배경 적용
+        "color": "#FF8DA1",
+        "bg_color": "#FFF0F3",
         "badge": "🔫 나나"
     },
     "린": {
@@ -69,7 +69,7 @@ MEMBER_THEMES = {
     },
 }
 
-# 3. 초기 노래 데이터 (단위: 회 / 부키의 5곡 제외 완료)
+# 3. 초기 노래 데이터
 INITIAL_SONGS = [
     # 유니버스 (단체곡)
     {"멤버": "유니버스", "곡명": "Stars Align", "조회수": 1410000, "original": True},
@@ -229,7 +229,7 @@ INITIAL_SONGS = [
     {"멤버": "리제", "곡명": "심월과 달의 노래", "조회수": 590000, "original": False},
     {"멤버": "리제", "곡명": "로스트원의 호곡", "조회수": 1900000, "original": False},
 
-    # 부키 (제외할 5곡 제외 완료)
+    # 부키
     {"멤버": "부키", "곡명": "베리베리스트로베리", "조회수": 1370000, "original": True},
     {"멤버": "부키", "곡명": "너에게 메롱", "조회수": 7870000, "original": False},
     {"멤버": "부키", "곡명": "여우비", "조회수": 5110000, "original": False},
@@ -329,7 +329,7 @@ INITIAL_SONGS = [
     {"멤버": "린", "곡명": "아이덴티티(with 부키)", "조회수": 2040000, "original": False},
 ]
 
-# 4. 세션 상태(게임 데이터) 초기화
+# 4. 세션 상태 초기화
 def init_songs():
     sorted_init = sorted(INITIAL_SONGS, key=lambda x: x["조회수"], reverse=True)
     return [dict(song, 변동=0, prev_rank_1m=i+1, initial_rank=i+1, is_trending=False, is_live=False) for i, song in enumerate(sorted_init)]
@@ -363,10 +363,26 @@ if "active_live_member" not in st.session_state:
 if "live_timer" not in st.session_state:
     st.session_state.live_timer = 0
 
-# 조회수 포맷팅 함수
 def format_views(views):
     man = views / 10000
     return f"{man:,.2f}만 ({views:,}회)"
+
+# --- 사이드바: 최애 곡 지정 (최대 10개) ---
+st.sidebar.title("💖 내 최애 곡 관리")
+st.sidebar.markdown("차트에서 강조해서 볼 곡을 최대 **10개**까지 선택하세요!")
+
+all_song_keys = [f"{song['멤버']} - {song['곡명']}" for song in st.session_state.songs]
+
+if "favorite_songs" not in st.session_state:
+    st.session_state.favorite_songs = []
+
+selected_favorites = st.sidebar.multiselect(
+    "최애 곡 선택 (최대 10개)",
+    options=all_song_keys,
+    default=st.session_state.favorite_songs,
+    max_selections=10
+)
+st.session_state.favorite_songs = selected_favorites
 
 # 상단 타이틀 및 컨트롤 버튼
 st.title("🎵 실시간 노래 차트 시뮬레이터")
@@ -496,8 +512,12 @@ def live_chart():
     for idx, song in enumerate(current_sorted):
         rank = idx + 1
         member = song["멤버"]
+        song_key = f"{member} - {song['곡명']}"
         init_rank = song.get("initial_rank", rank)
         
+        is_favorite = song_key in st.session_state.favorite_songs
+        fav_badge = ' <span style="background-color: #E67E22; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold; margin-left: 6px;">👑 최애</span>' if is_favorite else ''
+
         if song["곡명"] == "Dear my fairy":
             badge_html = '<span style="background: linear-gradient(135deg, #FF8DA1, #607D8B); color: white; padding: 4px 10px; border-radius: 15px; font-size: 0.85em; font-weight: bold;">🏫히나 & 🐱마시로</span>'
             left_border_color = "#FF8DA1"
@@ -531,6 +551,9 @@ def live_chart():
         rank_num_color = "white" if member == "히나" else "#222"
         views_color = "white" if member == "히나" else "#222"
 
+        # 최애 곡인 경우 카드 테두리에 골드빛 강조 효과 부여
+        card_border = "3px solid #F1C40F" if is_favorite else f"8px solid {left_border_color}"
+
         st.markdown(
             f"""
             <div style="
@@ -538,7 +561,7 @@ def live_chart():
                 align-items: center;
                 justify-content: space-between;
                 background-color: {bg_color};
-                border-left: 8px solid {left_border_color};
+                border-left: {card_border};
                 padding: 12px 20px;
                 margin-bottom: 8px;
                 border-radius: 8px;
@@ -553,7 +576,7 @@ def live_chart():
                     </div>
                     {badge_html}
                     <span style="font-size: 1.1em; font-weight: 700; color: {text_color};">
-                        {song['곡명']}{original_tag}{trending_tag}{live_tag}
+                        {song['곡명']}{fav_badge}{original_tag}{trending_tag}{live_tag}
                     </span>
                 </div>
                 <div style="text-align: right;">

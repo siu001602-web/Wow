@@ -160,13 +160,15 @@ INITIAL_SONGS = [
 # 4. 세션 상태(게임 데이터) 초기화
 def init_songs():
     sorted_init = sorted(INITIAL_SONGS, key=lambda x: x["조회수"], reverse=True)
-    return [dict(song, 변동=0, prev_rank_1m=i+1, initial_rank=i+1, is_trending=False) for i, song in enumerate(sorted_init)]
+    return [dict(song, 변동=0, prev_rank_1m=i+1, initial_rank=i+1, is_trending=False, is_live=False) for i, song in enumerate(sorted_init)]
 
 if "songs" not in st.session_state:
     st.session_state.songs = init_songs()
     st.session_state.tick = 0
     st.session_state.is_running = True
     st.session_state.recent_trending = []
+    st.session_state.active_live_member = None  # 현재 스페셜 라이브 중인 멤버
+    st.session_state.live_timer = 0             # 라이브 남은 틱 수
 else:
     for i, song in enumerate(st.session_state.songs):
         if "prev_rank_1m" not in song:
@@ -179,9 +181,15 @@ else:
             song["original"] = False
         if "is_trending" not in song:
             song["is_trending"] = False
+        if "is_live" not in song:
+            song["is_live"] = False
 
 if "recent_trending" not in st.session_state:
     st.session_state.recent_trending = []
+if "active_live_member" not in st.session_state:
+    st.session_state.active_live_member = None
+if "live_timer" not in st.session_state:
+    st.session_state.live_timer = 0
 
 # 조회수 포맷팅 함수
 def format_views(views):
@@ -200,6 +208,8 @@ with col2:
         st.session_state.songs = init_songs()
         st.session_state.tick = 0
         st.session_state.recent_trending = []
+        st.session_state.active_live_member = None
+        st.session_state.live_timer = 0
         st.rerun()
 
 # 5. 3초마다 자동 실행되는 실시간 차트 영역
@@ -215,8 +225,20 @@ def live_chart():
             for song in st.session_state.songs:
                 song["prev_rank_1m"] = snapshot_ranks[(song["멤버"], song["곡명"])]
 
-        # 각 곡마다 0.1% 확률(0.001)로 인급동(Trending) 발동 체크
+        # 스페셜 라이브 타이머 관리 및 랜덤 발동 (0.5% 확률로 멤버별 라이브 시작, 10틱(30초) 유지)
+        if st.session_state.live_timer > 0:
+            st.session_state.live_timer -= 1
+            if st.session_state.live_timer == 0:
+                st.session_state.active_live_member = None
+        else:
+            members = list(MEMBER_THEMES.keys())
+            if random.random() < 0.005:  # 0.5% 확률
+                st.session_state.active_live_member = random.choice(members)
+                st.session_state.live_timer = 10  # 10틱 동안 지속
+
+        # 각 곡별 조회수 증가 계산
         for song in st.session_state.songs:
+            # 인급동 체크 (0.1% 확률)
             if random.random() < 0.001:
                 song["is_trending"] = True
                 inc = random.randint(1000, 50000)
@@ -224,12 +246,40 @@ def live_chart():
             else:
                 song["is_trending"] = False
                 inc = random.randint(100, 10000)
+                
+                # 스페셜 라이브 진행 중인 멤버의 곡이라면 1~2배(1.2배~2배) 부스트 적용
+                if song["멤버"] == st.session_state.active_live_member:
+                    inc = int(inc * random.uniform(1.2, 2.0))
             
             song["조회수"] += inc
             song["변동"] = inc
 
     st.session_state.tick += 1
     st.session_state.recent_trending = triggered_list
+
+    # 스페셜 라이브 진행 중 상단 배너 표시
+    if st.session_state.active_live_member:
+        live_info = MEMBER_THEMES.get(st.session_state.active_live_member, {})
+        st.markdown(
+            f"""
+            <div style="
+                background: linear-gradient(135deg, #6a11cb, #2575fc);
+                color: white;
+                padding: 12px 20px;
+                border-radius: 8px;
+                margin-bottom: 10px;
+                font-weight: bold;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            ">
+                <span>🎤 [스페셜 라이브] <b>{live_info.get('badge', '')}</b>의 라이브 방송 진행 중! (조회수 1~2배 부스트 발동 🚀)</span>
+                <span style="font-size: 0.9em; background: rgba(255,255,255,0.2); padding: 3px 8px; border-radius: 4px;">남은 시간: 약 {st.session_state.live_timer * 3}초</span>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
     # 인급동 발동 알림 배너 표시 영역
     if st.session_state.recent_trending:
@@ -283,6 +333,9 @@ def live_chart():
         # 인급동 발동 태그
         trending_tag = ' <span style="background-color: #FF4757; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold; margin-left: 6px;">🔥 [인급동]</span>' if song.get("is_trending", False) else ''
 
+        # 스페셜 라이브 버프 중인 곡 태그
+        live_tag = ' <span style="background-color: #8E44AD; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold; margin-left: 6px;">🎤 [라이브버프]</span>' if member == st.session_state.active_live_member else ''
+
         # 1분 전 순위와 현재 순위 비교
         if st.session_state.tick < 20:
             rank_diff_html = '<span style="color: gray; font-size: 0.85em;">-</span>'
@@ -320,7 +373,7 @@ def live_chart():
                     </div>
                     {badge_html}
                     <span style="font-size: 1.1em; font-weight: 700; color: #111;">
-                        {song['곡명']}{original_tag}{trending_tag}
+                        {song['곡명']}{original_tag}{trending_tag}{live_tag}
                     </span>
                 </div>
                 <div style="text-align: right;">

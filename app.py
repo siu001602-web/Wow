@@ -120,7 +120,6 @@ INITIAL_SONGS = [
 # 4. 세션 상태(게임 데이터) 초기화
 def init_songs():
     sorted_init = sorted(INITIAL_SONGS, key=lambda x: x["조회수"], reverse=True)
-    # 초기 순위(initial_rank) 필드 추가
     return [dict(song, 변동=0, prev_rank_1m=i+1, initial_rank=i+1, is_trending=False) for i, song in enumerate(sorted_init)]
 
 if "songs" not in st.session_state:
@@ -274,7 +273,7 @@ def live_chart():
             ">
                 <div style="display: flex; align-items: center; gap: 15px;">
                     <div style="font-size: 1.2em; font-weight: 800; width: 60px; text-align: center; color: #222;">
-                        {rank}위 <span style="font-size: 0.75em; color: gray; font-weight: normal;">(초기 {init_rank})</span>
+                        {rank}위 <span style="font-size: 0.75em; color: gray; font-weight: normal;">({init_rank})</span>
                     </div>
                     <div style="width: 45px; text-align: center;">
                         {rank_diff_html}

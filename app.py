@@ -21,38 +21,71 @@ MEMBER_THEMES = {
         "bg_color": "#FFF0F4",   # 연한 핑크색 배경
         "badge": "🐉 후야"
     },
+    "마시로": {
+        "color": "#607D8B",      # 슬레이트 실버/블루 계열
+        "bg_color": "#ECEFF1",   # 연한 그레이 화이트 배경
+        "badge": "🐱 마시로"
+    },
+    "히나": {
+        "color": "#FF8DA1",      # 핑크 계열
+        "bg_color": "#FFF0F3",
+        "badge": "🏫 히나"
+    },
+    "시로": {
+        "color": "#7F8C8D",      # 그레이 계열
+        "bg_color": "#F2F4F4",
+        "badge": "🐱 시로"
+    },
 }
 
-# 3. 초기 노래 데이터 (단위: 회)
+# 3. 초기 노래 데이터 (단위: 회 / original=True는 오리지널 곡)
 INITIAL_SONGS = [
     # 유니
-    {"멤버": "유니", "곡명": "긍지높은 아이돌", "조회수": 1190000},
-    {"멤버": "유니", "곡명": "베텔기우스", "조회수": 1720000},
-    {"멤버": "유니", "곡명": "사랑의 말IV", "조회수": 730000},
-    {"멤버": "유니", "곡명": "굿바이 선언", "조회수": 2100000},
-    {"멤버": "유니", "곡명": "아이돌", "조회수": 780000},
-    {"멤버": "유니", "곡명": "내꺼 하는 법", "조회수": 7120000},
-    {"멤버": "유니", "곡명": "Mela!", "조회수": 1140000},
-    {"멤버": "유니", "곡명": "두근어질", "조회수": 720000},
-    {"멤버": "유니", "곡명": "SUPERPOWER", "조회수": 240000},
-    {"멤버": "유니", "곡명": "점묘의 노래(with 칸나)", "조회수": 3130000},
-    {"멤버": "유니", "곡명": "해피 신디사이저(with 시로)", "조회수": 1110000},
-    {"멤버": "유니", "곡명": "연애 서큘레이션", "조회수": 850000},
-    {"멤버": "유니", "곡명": "SUPADOPA", "조회수": 6200000},
-    {"멤버": "유니", "곡명": "라일락", "조회수": 1380000},
-    {"멤버": "유니", "곡명": "삐질게", "조회수": 1190000},
-    {"멤버": "유니", "곡명": "참생활", "조회수": 400000},
-    {"멤버": "유니", "곡명": "오네가이 달링", "조회수": 500000},
+    {"멤버": "유니", "곡명": "긍지높은 아이돌", "조회수": 1190000, "original": False},
+    {"멤버": "유니", "곡명": "베텔기우스", "조회수": 1720000, "original": False},
+    {"멤버": "유니", "곡명": "사랑의 말IV", "조회수": 730000, "original": False},
+    {"멤버": "유니", "곡명": "굿바이 선언", "조회수": 2100000, "original": False},
+    {"멤버": "유니", "곡명": "아이돌", "조회수": 780000, "original": False},
+    {"멤버": "유니", "곡명": "내꺼 하는 법", "조회수": 7120000, "original": True},
+    {"멤버": "유니", "곡명": "Mela!", "조회수": 1140000, "original": False},
+    {"멤버": "유니", "곡명": "두근어질", "조회수": 720000, "original": False},
+    {"멤버": "유니", "곡명": "SUPERPOWER", "조회수": 240000, "original": False},
+    {"멤버": "유니", "곡명": "점묘의 노래(with 칸나)", "조회수": 3130000, "original": False},
+    {"멤버": "유니", "곡명": "해피 신디사이저(with 시로)", "조회수": 1110000, "original": False},
+    {"멤버": "유니", "곡명": "연애 서큘레이션", "조회수": 850000, "original": False},
+    {"멤버": "유니", "곡명": "SUPADOPA", "조회수": 6200000, "original": True},
+    {"멤버": "유니", "곡명": "라일락", "조회수": 1380000, "original": False},
+    {"멤버": "유니", "곡명": "삐질게", "조회수": 1190000, "original": True},
+    {"멤버": "유니", "곡명": "참생활", "조회수": 400000, "original": False},
+    {"멤버": "유니", "곡명": "오네가이 달링", "조회수": 500000, "original": False},
     
     # 후야
-    {"멤버": "후야", "곡명": "오츠카레summer(with 나나)", "조회수": 850000},
-    {"멤버": "후야", "곡명": "푸른 산호초", "조회수": 640000},
-    {"멤버": "후야", "곡명": "BOOO!", "조회수": 440000},
-    {"멤버": "후야", "곡명": "Melt!", "조회수": 480000},
-    {"멤버": "후야", "곡명": "푸른 하늘의 랩소디", "조회수": 970000},
-    {"멤버": "후야", "곡명": "CHEWING LUV", "조회수": 380000},
-    {"멤버": "후야", "곡명": "팝핀 캔디☆피버(with 유니)", "조회수": 1740000},
-    {"멤버": "후야", "곡명": "별자리가 될 수 있다면", "조회수": 1570000},
+    {"멤버": "후야", "곡명": "오츠카레summer(with 나나)", "조회수": 850000, "original": False},
+    {"멤버": "후야", "곡명": "푸른 산호초", "조회수": 640000, "original": False},
+    {"멤버": "후야", "곡명": "BOOO!", "조회수": 440000, "original": False},
+    {"멤버": "후야", "곡명": "Melt!", "조회수": 480000, "original": False},
+    {"멤버": "후야", "곡명": "푸른 하늘의 랩소디", "조회수": 970000, "original": False},
+    {"멤버": "후야", "곡명": "CHEWING LUV", "조회수": 380000, "original": False},
+    {"멤버": "후야", "곡명": "팝핀 캔디☆피버(with 유니)", "조회수": 1740000, "original": False},
+    {"멤버": "후야", "곡명": "별자리가 될 수 있다면", "조회수": 1570000, "original": False},
+
+    # 마시로
+    {"멤버": "마시로", "곡명": "봄꿈", "조회수": 1680000, "original": True},
+    {"멤버": "마시로", "곡명": "Dear my fairy", "조회수": 420000, "original": True},
+    {"멤버": "마시로", "곡명": "Pale", "조회수": 2400000, "original": False},
+    {"멤버": "마시로", "곡명": "퀘스천", "조회수": 2250000, "original": False},
+    {"멤버": "마시로", "곡명": "구르는 바위, 네게 아침이 내린다", "조회수": 170000, "original": False},
+    {"멤버": "마시로", "곡명": "메이드지상주의(with 린)", "조회수": 340000, "original": False},
+    {"멤버": "마시로", "곡명": "쿵쿵 앞으로", "조회수": 340000, "original": False},
+    {"멤버": "마시로", "곡명": "그나라의 왕가는 이상해(with 리제)", "조회수": 420000, "original": False},
+    {"멤버": "마시로", "곡명": "병명 상사병", "조회수": 550000, "original": False},
+    {"멤버": "마시로", "곡명": "슈가로스", "조회수": 720000, "original": False},
+    {"멤버": "마시로", "곡명": "우주 비행사의 노래", "조회수": 750000, "original": False},
+    {"멤버": "마시로", "곡명": "댄스 로봇 댄스", "조회수": 770000, "original": False},
+    {"멤버": "마시로", "곡명": "츄 다양성", "조회수": 1030000, "original": False},
+    {"멤버": "마시로", "곡명": "연예인", "조회수": 1100000, "original": False},
+    {"멤버": "마시로", "곡명": "네 기꺼이(with 부키)", "조회수": 1180000, "original": False},
+    {"멤버": "마시로", "곡명": "안녕, 꽃도둑씨", "조회수": 1390000, "original": False},
 ]
 
 # 4. 세션 상태(게임 데이터) 초기화
@@ -65,12 +98,13 @@ if "songs" not in st.session_state:
     st.session_state.tick = 0
     st.session_state.is_running = True
 else:
-    # 기존 세션에 키가 누락되어 있을 경우 안전하게 보정
     for i, song in enumerate(st.session_state.songs):
         if "prev_rank_1m" not in song:
             song["prev_rank_1m"] = i + 1
         if "변동" not in song:
             song["변동"] = 0
+        if "original" not in song:
+            song["original"] = False
 
 # 조회수 포맷팅 함수
 def format_views(views):
@@ -119,9 +153,22 @@ def live_chart():
     for idx, song in enumerate(current_sorted):
         rank = idx + 1
         member = song["멤버"]
-        theme = MEMBER_THEMES.get(member, {"color": "#888888", "bg_color": "#F0F0F0", "badge": member})
+        
+        # 'Dear my fairy' 곡은 히나 & 시로 특수 배지 적용
+        if song["곡명"] == "Dear my fairy":
+            badge_html = '<span style="background: linear-gradient(135deg, #FF8DA1, #7F8C8D); color: white; padding: 4px 10px; border-radius: 15px; font-size: 0.85em; font-weight: bold;">🏫히나 & 🐱시로</span>'
+            left_border_color = "#FF8DA1"
+            bg_color = "#FFF5F7"
+        else:
+            theme = MEMBER_THEMES.get(member, {"color": "#888888", "bg_color": "#F0F0F0", "badge": member})
+            badge_html = f'<span style="background-color: {theme["color"]}; color: white; padding: 4px 10px; border-radius: 15px; font-size: 0.85em; font-weight: bold;">{theme["badge"]}</span>'
+            left_border_color = theme["color"]
+            bg_color = theme["bg_color"]
 
-        # 1분 전 순위와 현재 순위 비교 (.get으로 안전하게 가져옴)
+        # 오리지널 곡 태그
+        original_tag = ' <span style="background-color: #FFD700; color: #333; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold; margin-left: 6px;">✨ 오리지널</span>' if song.get("original", False) else ''
+
+        # 1분 전 순위와 현재 순위 비교
         if st.session_state.tick < 20:
             rank_diff_html = '<span style="color: gray; font-size: 0.85em;">-</span>'
         else:
@@ -142,8 +189,8 @@ def live_chart():
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
-                background-color: {theme['bg_color']};
-                border-left: 8px solid {theme['color']};
+                background-color: {bg_color};
+                border-left: 8px solid {left_border_color};
                 padding: 12px 20px;
                 margin-bottom: 8px;
                 border-radius: 8px;
@@ -156,18 +203,9 @@ def live_chart():
                     <div style="width: 45px; text-align: center;">
                         {rank_diff_html}
                     </div>
-                    <span style="
-                        background-color: {theme['color']};
-                        color: white;
-                        padding: 4px 10px;
-                        border-radius: 15px;
-                        font-size: 0.85em;
-                        font-weight: bold;
-                    ">
-                        {theme['badge']}
-                    </span>
+                    {badge_html}
                     <span style="font-size: 1.1em; font-weight: 700; color: #111;">
-                        {song['곡명']}
+                        {song['곡명']}{original_tag}
                     </span>
                 </div>
                 <div style="text-align: right;">

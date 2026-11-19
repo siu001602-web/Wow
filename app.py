@@ -9,61 +9,62 @@ st.set_page_config(
     layout="wide"
 )
 
-# 2. 멤버별 테마 색상 및 스타일 정의
+# 2. 멤버별 테마 색상 및 스타일 정의 (나나: 히나 색상 적용 / 히나: 검은색 배경 적용)
 MEMBER_THEMES = {
     "유니": {
-        "color": "#9B72CF",      # 보라색 계열
-        "bg_color": "#F5EEFF",   # 연한 보라색 배경
+        "color": "#9B72CF",
+        "bg_color": "#F5EEFF",
         "badge": "🦄 유니"
     },
     "후야": {
-        "color": "#FF6B8B",      # 코랄 핑크 계열
-        "bg_color": "#FFF0F4",   # 연한 핑크색 배경
+        "color": "#FF6B8B",
+        "bg_color": "#FFF0F4",
         "badge": "🐉 후야"
     },
     "마시로": {
-        "color": "#607D8B",      # 슬레이트 실버/블루 계열
-        "bg_color": "#ECEFF1",   # 연한 그레이 화이트 배경
+        "color": "#607D8B",
+        "bg_color": "#ECEFF1",
         "badge": "🐱 마시로"
     },
     "타비": {
-        "color": "#2980B9",      # 네이비/블루 계열
-        "bg_color": "#EAF2F8",   # 연한 블루 배경
+        "color": "#2980B9",
+        "bg_color": "#EAF2F8",
         "badge": "🧭 타비"
     },
     "히나": {
-        "color": "#FF8DA1",      # 핑크 계열
-        "bg_color": "#FFF0F3",   # 연한 핑크 배경
-        "badge": "🏫 히나"
+        "color": "#333333",      # 검은색 테두리/포인트
+        "bg_color": "#2C3E50",   # 다크/검은색 계열 배경
+        "badge": "🏫 히나",
+        "text_color": "white"
     },
     "리제": {
-        "color": "#C0392B",      # 진한 빨강 계열
-        "bg_color": "#FDEDEC",   # 연한 빨강 배경
+        "color": "#C0392B",
+        "bg_color": "#FDEDEC",
         "badge": "🧛‍♀️ 리제"
     },
     "부키": {
-        "color": "#F1C40F",      # 노란색 계열
-        "bg_color": "#FEF9E7",   # 연한 노란색 배경
+        "color": "#F1C40F",
+        "bg_color": "#FEF9E7",
         "badge": "🦊 부키"
     },
     "나나": {
-        "color": "#27AE60",      # 연두색 계열
-        "bg_color": "#EAFAF1",   # 연한 연두색 배경
+        "color": "#FF8DA1",      # 히나 색상 적용
+        "bg_color": "#FFF0F3",   # 히나 연한 핑크 배경 적용
         "badge": "🔫 나나"
     },
     "린": {
-        "color": "#BDC3C7",      # 흰색/실버 계열
-        "bg_color": "#F8F9F9",   # 연한 흰/회색 배경
+        "color": "#BDC3C7",
+        "bg_color": "#F8F9F9",
         "badge": "👗 린"
     },
     "유니버스": {
-        "color": "#16A085",      # 청록색 계열
-        "bg_color": "#E8F8F5",   # 연한 청록 배경
+        "color": "#16A085",
+        "bg_color": "#E8F8F5",
         "badge": "✨ 유니버스"
     },
     "시로": {
-        "color": "#7F8C8D",      # 그레이 계열
-        "bg_color": "#F2F4F4",   # 연한 그레이 배경
+        "color": "#7F8C8D",
+        "bg_color": "#F2F4F4",
         "badge": "🐱 시로"
     },
 }
@@ -381,7 +382,6 @@ with col1:
         st.session_state.is_running = not st.session_state.is_running
 with col2:
     if st.button("⏩ 30분 스킵", use_container_width=True):
-        # 30분 = 1800초 / 3초 틱 = 600번의 틱을 한 번에 시뮬레이션
         for _ in range(600):
             st.session_state.tick += 1
             if st.session_state.tick % 20 == 0:
@@ -414,27 +414,23 @@ def live_chart():
     triggered_list = []
     
     if st.session_state.is_running and st.session_state.tick > 0:
-        # 매 20틱(3초 * 20 = 60초 = 1분)마다 현재 순위를 '1분 전 순위'로 갱신
         if st.session_state.tick % 20 == 0:
             current_sorted_for_snapshot = sorted(st.session_state.songs, key=lambda x: x["조회수"], reverse=True)
             snapshot_ranks = {(song["멤버"], song["곡명"]): idx + 1 for idx, song in enumerate(current_sorted_for_snapshot)}
             for song in st.session_state.songs:
                 song["prev_rank_1m"] = snapshot_ranks[(song["멤버"], song["곡명"])]
 
-        # 스페셜 라이브 타이머 관리 및 랜덤 발동 (0.5% 확률로 멤버별 라이브 시작, 10틱(30초) 유지)
         if st.session_state.live_timer > 0:
             st.session_state.live_timer -= 1
             if st.session_state.live_timer == 0:
                 st.session_state.active_live_member = None
         else:
             members = list(MEMBER_THEMES.keys())
-            if random.random() < 0.005:  # 0.5% 확률
+            if random.random() < 0.005:
                 st.session_state.active_live_member = random.choice(members)
-                st.session_state.live_timer = 10  # 10틱 동안 지속
+                st.session_state.live_timer = 10
 
-        # 각 곡별 조회수 증가 계산
         for song in st.session_state.songs:
-            # 인급동 체크 (0.1% 확률) - 10,000 ~ 200,000 사이 증가
             if random.random() < 0.001:
                 song["is_trending"] = True
                 inc = random.randint(10000, 200000)
@@ -443,7 +439,6 @@ def live_chart():
                 song["is_trending"] = False
                 inc = random.randint(100, 10000)
                 
-                # 스페셜 라이브 진행 중인 멤버의 곡이라면 1~2배(1.2배~2배) 부스트 적용
                 if song["멤버"] == st.session_state.active_live_member:
                     inc = int(inc * random.uniform(1.2, 2.0))
             
@@ -453,7 +448,6 @@ def live_chart():
     st.session_state.tick += 1
     st.session_state.recent_trending = triggered_list
 
-    # 스페셜 라이브 진행 중 상단 배너 표시
     if st.session_state.active_live_member:
         live_info = MEMBER_THEMES.get(st.session_state.active_live_member, {})
         st.markdown(
@@ -477,7 +471,6 @@ def live_chart():
             unsafe_allow_html=True
         )
 
-    # 인급동 발동 알림 배너 표시 영역
     if st.session_state.recent_trending:
         for song_name, inc_val in st.session_state.recent_trending:
             st.markdown(
@@ -500,41 +493,34 @@ def live_chart():
                 unsafe_allow_html=True
             )
 
-    # 조회수 내림차순 정렬
     current_sorted = sorted(st.session_state.songs, key=lambda x: x["조회수"], reverse=True)
 
     status_text = "🟢 실시간 집계 중 (3초 갱신 / 1분 단위 순위 반영)" if st.session_state.is_running else "⏸️ 일시정지됨"
     st.caption(f"{status_text} | 총 {len(current_sorted)}곡 경쟁 중 | 경과 시간: {(st.session_state.tick - 1) * 3}초")
 
-    # HTML/CSS 커스텀 차트 렌더링
     for idx, song in enumerate(current_sorted):
         rank = idx + 1
         member = song["멤버"]
         init_rank = song.get("initial_rank", rank)
         
-        # 특수 듀엣 배지 처리
         if song["곡명"] == "Dear my fairy":
             badge_html = '<span style="background: linear-gradient(135deg, #FF8DA1, #607D8B); color: white; padding: 4px 10px; border-radius: 15px; font-size: 0.85em; font-weight: bold;">🏫히나 & 🐱마시로</span>'
             left_border_color = "#FF8DA1"
             bg_color = "#FFF5F7"
+            text_color = "#111"
         else:
             theme = MEMBER_THEMES.get(member, {"color": "#888888", "bg_color": "#F0F0F0", "badge": member})
-            # 린, 부키, 나나처럼 밝은 배경의 배지는 글자색을 어둡게 처리
             badge_text_color = "#333" if member in ["부키", "나나", "린"] else "white"
             badge_html = f'<span style="background-color: {theme["color"]}; color: {badge_text_color}; border: 1px solid #ddd; padding: 4px 10px; border-radius: 15px; font-size: 0.85em; font-weight: bold;">{theme["badge"]}</span>'
             left_border_color = theme["color"]
             bg_color = theme["bg_color"]
+            # 히나는 검은색 배경이므로 글자색을 하얗게 조정
+            text_color = "white" if member == "히나" else "#111"
 
-        # 오리지널 곡 태그
         original_tag = ' <span style="background-color: #FFD700; color: #333; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold; margin-left: 6px;">✨ 오리지널</span>' if song.get("original", False) else ''
-
-        # 인급동 발동 태그
         trending_tag = ' <span style="background-color: #FF4757; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold; margin-left: 6px;">🔥 [인급동]</span>' if song.get("is_trending", False) else ''
-
-        # 스페셜 라이브 버프 중인 곡 태그
         live_tag = ' <span style="background-color: #8E44AD; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold; margin-left: 6px;">🎤 [라이브버프]</span>' if member == st.session_state.active_live_member else ''
 
-        # 1분 전 순위와 현재 순위 비교
         if st.session_state.tick < 20:
             rank_diff_html = '<span style="color: gray; font-size: 0.85em;">-</span>'
         else:
@@ -548,6 +534,8 @@ def live_chart():
                 rank_diff_html = '<span style="color: gray; font-size: 0.85em;">-</span>'
 
         inc_text = f"+{song['변동']:,}" if st.session_state.tick > 1 else "시작 조회수"
+        rank_num_color = "white" if member == "히나" else "#222"
+        views_color = "white" if member == "히나" else "#222"
 
         st.markdown(
             f"""
@@ -563,22 +551,22 @@ def live_chart():
                 box-shadow: 0 1px 3px rgba(0,0,0,0.08);
             ">
                 <div style="display: flex; align-items: center; gap: 15px;">
-                    <div style="font-size: 1.2em; font-weight: 800; width: 60px; text-align: center; color: #222;">
-                        {rank}위 <span style="font-size: 0.75em; color: gray; font-weight: normal;">({init_rank})</span>
+                    <div style="font-size: 1.2em; font-weight: 800; width: 60px; text-align: center; color: {rank_num_color};">
+                        {rank}위 <span style="font-size: 0.75em; color: {'#aaa' if member == '히나' else 'gray'}; font-weight: normal;">({init_rank})</span>
                     </div>
                     <div style="width: 45px; text-align: center;">
                         {rank_diff_html}
                     </div>
                     {badge_html}
-                    <span style="font-size: 1.1em; font-weight: 700; color: #111;">
+                    <span style="font-size: 1.1em; font-weight: 700; color: {text_color};">
                         {song['곡명']}{original_tag}{trending_tag}{live_tag}
                     </span>
                 </div>
                 <div style="text-align: right;">
-                    <div style="font-size: 1.05em; font-weight: 700; color: #222;">
+                    <div style="font-size: 1.05em; font-weight: 700; color: {views_color};">
                         {format_views(song['조회수'])}
                     </div>
-                    <div style="font-size: 0.8em; color: #E67E22; font-weight: 600;">
+                    <div style="font-size: 0.8em; color: {'#F1C40F' if member == '히나' else '#E67E22'}; font-weight: 600;">
                         {inc_text}
                     </div>
                 </div>

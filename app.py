@@ -33,13 +33,18 @@ MEMBER_THEMES = {
     },
     "히나": {
         "color": "#FF8DA1",      # 핑크 계열
-        "bg_color": "#FFF0F3",
+        "bg_color": "#FFF0F3",   # 연한 핑크 배경
         "badge": "🏫 히나"
     },
     "리제": {
         "color": "#C0392B",      # 진한 빨강 계열
         "bg_color": "#FDEDEC",   # 연한 빨강 배경
         "badge": "🧛‍♀️ 리제"
+    },
+    "부키": {
+        "color": "#F1C40F",      # 노란색 계열
+        "bg_color": "#FEF9E7",   # 연한 노란색 배경
+        "badge": "🦊 부키"
     },
     "유니버스": {
         "color": "#16A085",      # 청록색 계열
@@ -48,7 +53,7 @@ MEMBER_THEMES = {
     },
     "시로": {
         "color": "#7F8C8D",      # 그레이 계열
-        "bg_color": "#F2F4F4",
+        "bg_color": "#F2F4F4",   # 연한 그레이 배경
         "badge": "🐱 시로"
     },
 }
@@ -212,6 +217,29 @@ INITIAL_SONGS = [
     {"멤버": "리제", "곡명": "미랫빛 라이더", "조회수": 780000, "original": False},
     {"멤버": "리제", "곡명": "심월과 달의 노래", "조회수": 590000, "original": False},
     {"멤버": "리제", "곡명": "로스트원의 호곡", "조회수": 1900000, "original": False},
+
+    # 부키
+    {"멤버": "부키", "곡명": "베리베리스트로베리", "조회수": 1370000, "original": True},
+    {"멤버": "부키", "곡명": "너에게 메롱", "조회수": 7870000, "original": False},
+    {"멤버": "부키", "곡명": "여우비", "조회수": 5110000, "original": False},
+    {"멤버": "부키", "곡명": "Leo", "조회수": 3440000, "original": False},
+    {"멤버": "부키", "곡명": "Sabotage", "조회수": 1540000, "original": False},
+    {"멤버": "부키", "곡명": "겨울의 선물", "조회수": 1280000, "original": False},
+    {"멤버": "부키", "곡명": "Sos", "조회수": 890000, "original": False},
+    {"멤버": "부키", "곡명": "있잖아 있잖아 있잖아(with 리코)", "조회수": 1740000, "original": False},
+    {"멤버": "부키", "곡명": "눈싸움", "조회수": 2010000, "original": False},
+    {"멤버": "부키", "곡명": "UNDEAD", "조회수": 2450000, "original": False},
+    {"멤버": "부키", "곡명": "푸름과 여름", "조회수": 2410000, "original": False},
+    {"멤버": "부키", "곡명": "KING(with 린)", "조회수": 1730000, "original": False},
+    {"멤버": "부키", "곡명": "생명에게 미움받고 있어", "조회수": 3520000, "original": False},
+    {"멤버": "부키", "곡명": "메리크리", "조회수": 840000, "original": False},
+    {"멤버": "부키", "곡명": "Daybreak frontline", "조회수": 2050000, "original": False},
+    {"멤버": "부키", "곡명": "러브레터", "조회수": 1090000, "original": False},
+    {"멤버": "부키", "곡명": "행복에 대해 내가 생각한것", "조회수": 1630000, "original": False},
+    {"멤버": "부키", "곡명": "나에게 꽃다발", "조회수": 530000, "original": False},
+    {"멤버": "부키", "곡명": "친애하는 소년이여", "조회수": 1660000, "original": False},
+    {"멤버": "부키", "곡명": "mosi mosi?", "조회수": 590000, "original": False},
+    {"멤버": "부키", "곡명": "혁명도중", "조회수": 900000, "original": False},
 ]
 
 # 4. 세션 상태(게임 데이터) 초기화
@@ -295,7 +323,7 @@ def live_chart():
 
         # 각 곡별 조회수 증가 계산
         for song in st.session_state.songs:
-            # 인급동 체크 (0.1% 확률) - 10,000 ~ 200,000 사이 증가로 수정
+            # 인급동 체크 (0.1% 확률) - 10,000 ~ 200,000 사이 증가
             if random.random() < 0.001:
                 song["is_trending"] = True
                 inc = random.randint(10000, 200000)
@@ -380,7 +408,8 @@ def live_chart():
             bg_color = "#FFF5F7"
         else:
             theme = MEMBER_THEMES.get(member, {"color": "#888888", "bg_color": "#F0F0F0", "badge": member})
-            badge_html = f'<span style="background-color: {theme["color"]}; color: white; padding: 4px 10px; border-radius: 15px; font-size: 0.85em; font-weight: bold;">{theme["badge"]}</span>'
+            badge_text_color = "#333" if member == "부키" else "white"
+            badge_html = f'<span style="background-color: {theme["color"]}; color: {badge_text_color}; padding: 4px 10px; border-radius: 15px; font-size: 0.85em; font-weight: bold;">{theme["badge"]}</span>'
             left_border_color = theme["color"]
             bg_color = theme["bg_color"]
 

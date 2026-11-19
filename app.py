@@ -120,7 +120,7 @@ INITIAL_SONGS = [
 # 4. 세션 상태(게임 데이터) 초기화
 def init_songs():
     sorted_init = sorted(INITIAL_SONGS, key=lambda x: x["조회수"], reverse=True)
-    return [dict(song, 변동=0, prev_rank_1m=i+1) for i, song in enumerate(sorted_init)]
+    return [dict(song, 변동=0, prev_rank_1m=i+1, is_trending=False) for i, song in enumerate(sorted_init)]
 
 if "songs" not in st.session_state:
     st.session_state.songs = init_songs()
@@ -134,6 +134,8 @@ else:
             song["변동"] = 0
         if "original" not in song:
             song["original"] = False
+        if "is_trending" not in song:
+            song["is_trending"] = False
 
 # 조회수 포맷팅 함수
 def format_views(views):
@@ -164,9 +166,15 @@ def live_chart():
             for song in st.session_state.songs:
                 song["prev_rank_1m"] = snapshot_ranks[(song["멤버"], song["곡명"])]
 
-        # 각 곡마다 100 ~ 10,000 조회수 랜덤 증가
+        # 각 곡마다 0.1% 확률(0.001)로 인급동(Trending) 발동 체크
         for song in st.session_state.songs:
-            inc = random.randint(100, 10000)
+            if random.random() < 0.001:
+                song["is_trending"] = True
+                inc = random.randint(1000, 50000)
+            else:
+                song["is_trending"] = False
+                inc = random.randint(100, 10000)
+            
             song["조회수"] += inc
             song["변동"] = inc
 
@@ -183,7 +191,7 @@ def live_chart():
         rank = idx + 1
         member = song["멤버"]
         
-        # 'Dear my fairy'만 히나×마시로 특수 듀엣 배지 유지, 나머지는 멤버 기본 테마 적용
+        # 특수 듀엣 배지 처리
         if song["곡명"] == "Dear my fairy":
             badge_html = '<span style="background: linear-gradient(135deg, #FF8DA1, #607D8B); color: white; padding: 4px 10px; border-radius: 15px; font-size: 0.85em; font-weight: bold;">🏫히나 & 🐱마시로</span>'
             left_border_color = "#FF8DA1"
@@ -196,6 +204,9 @@ def live_chart():
 
         # 오리지널 곡 태그
         original_tag = ' <span style="background-color: #FFD700; color: #333; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold; margin-left: 6px;">✨ 오리지널</span>' if song.get("original", False) else ''
+
+        # 인급동 발동 태그
+        trending_tag = ' <span style="background-color: #FF4757; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold; margin-left: 6px; animation: blink 1s infinite;">🔥 [인급동]</span>' if song.get("is_trending", False) else ''
 
         # 1분 전 순위와 현재 순위 비교
         if st.session_state.tick < 20:
@@ -234,7 +245,7 @@ def live_chart():
                     </div>
                     {badge_html}
                     <span style="font-size: 1.1em; font-weight: 700; color: #111;">
-                        {song['곡명']}{original_tag}
+                        {song['곡명']}{original_tag}{trending_tag}
                     </span>
                 </div>
                 <div style="text-align: right;">

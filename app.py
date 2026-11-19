@@ -245,6 +245,11 @@ INITIAL_SONGS = [
     {"멤버": "부키", "곡명": "친애하는 소년이여", "조회수": 1660000, "original": False},
     {"멤버": "부키", "곡명": "mosi mosi?", "조회수": 590000, "original": False},
     {"멤버": "부키", "곡명": "혁명도중", "조회수": 900000, "original": False},
+    {"멤버": "부키", "곡명": "호시아이[4k]", "조회수": 240000, "original": False},
+    {"멤버": "부키", "곡명": "StaRt[4k]", "조회수": 240000, "original": False},
+    {"멤버": "부키", "곡명": "신의 뜻대로[4k] (with 린,리코,나나)", "조회수": 1380000, "original": False},
+    {"멤버": "부키", "곡명": "잡어[4k] (with 시로)", "조회수": 170000, "original": False},
+    {"멤버": "부키", "곡명": "숨바꼭질[4k]", "조회수": 330000, "original": False},
 
     # 나나
     {"멤버": "나나", "곡명": "Hush trap", "조회수": 1150000, "original": True},
@@ -324,11 +329,33 @@ def format_views(views):
 # 상단 타이틀 및 컨트롤 버튼
 st.title("🎵 실시간 노래 차트 시뮬레이터")
 
-col1, col2, col3 = st.columns([1, 1, 4])
+col1, col2, col3, col4 = st.columns([1, 1, 1, 3])
 with col1:
     if st.button("⏯️ 일시정지 / 재개", use_container_width=True):
         st.session_state.is_running = not st.session_state.is_running
 with col2:
+    if st.button("⏩ 30분 스킵", use_container_width=True):
+        # 30분 = 1800초 / 3초 틱 = 600번의 틱을 한 번에 시뮬레이션
+        for _ in range(600):
+            st.session_state.tick += 1
+            # 1분(20틱) 단위 순위 스냅샷 갱신 처리
+            if st.session_state.tick % 20 == 0:
+                current_sorted_for_snapshot = sorted(st.session_state.songs, key=lambda x: x["조회수"], reverse=True)
+                snapshot_ranks = {(song["멤버"], song["곡명"]): idx + 1 for idx, song in enumerate(current_sorted_for_snapshot)}
+                for song in st.session_state.songs:
+                    song["prev_rank_1m"] = snapshot_ranks[(song["멤버"], song["곡명"])]
+            
+            # 조회수 일괄 증가 (스킵 중에는 가벼운 일반 증가 및 인급동 확률 반영)
+            for song in st.session_state.songs:
+                if random.random() < 0.001:
+                    inc = random.randint(10000, 200000)
+                else:
+                    inc = random.randint(100, 10000)
+                song["조회수"] += inc
+                song["변동"] = inc
+        st.rerun()
+
+with col3:
     if st.button("🔄 차트 초기화", use_container_width=True):
         st.session_state.songs = init_songs()
         st.session_state.tick = 0

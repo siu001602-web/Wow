@@ -295,10 +295,10 @@ def live_chart():
 
         # 각 곡별 조회수 증가 계산
         for song in st.session_state.songs:
-            # 인급동 체크 (0.1% 확률)
+            # 인급동 체크 (0.1% 확률) - 10,000 ~ 200,000 사이 증가로 수정
             if random.random() < 0.001:
                 song["is_trending"] = True
-                inc = random.randint(1000, 50000)
+                inc = random.randint(10000, 200000)
                 triggered_list.append((song["곡명"], inc))
             else:
                 song["is_trending"] = False

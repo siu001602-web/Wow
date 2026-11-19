@@ -126,6 +126,7 @@ if "songs" not in st.session_state:
     st.session_state.songs = init_songs()
     st.session_state.tick = 0
     st.session_state.is_running = True
+    st.session_state.recent_trending = [] # 이번 턴에 인급동이 뜬 곡 정보 저장용
 else:
     for i, song in enumerate(st.session_state.songs):
         if "prev_rank_1m" not in song:
@@ -136,6 +137,9 @@ else:
             song["original"] = False
         if "is_trending" not in song:
             song["is_trending"] = False
+
+if "recent_trending" not in st.session_state:
+    st.session_state.recent_trending = []
 
 # 조회수 포맷팅 함수
 def format_views(views):
@@ -153,11 +157,14 @@ with col2:
     if st.button("🔄 차트 초기화", use_container_width=True):
         st.session_state.songs = init_songs()
         st.session_state.tick = 0
+        st.session_state.recent_trending = []
         st.rerun()
 
 # 5. 3초마다 자동 실행되는 실시간 차트 영역
 @st.fragment(run_every=3)
 def live_chart():
+    triggered_list = []
+    
     if st.session_state.is_running and st.session_state.tick > 0:
         # 매 20틱(3초 * 20 = 60초 = 1분)마다 현재 순위를 '1분 전 순위'로 갱신
         if st.session_state.tick % 20 == 0:
@@ -171,6 +178,7 @@ def live_chart():
             if random.random() < 0.001:
                 song["is_trending"] = True
                 inc = random.randint(1000, 50000)
+                triggered_list.append((song["곡명"], inc))
             else:
                 song["is_trending"] = False
                 inc = random.randint(100, 10000)
@@ -179,6 +187,31 @@ def live_chart():
             song["변동"] = inc
 
     st.session_state.tick += 1
+    st.session_state.recent_trending = triggered_list
+
+    # 인급동 발동 알림 배너 표시 영역
+    if st.session_state.recent_trending:
+        for song_name, inc_val in st.session_state.recent_trending:
+            st.markdown(
+                f"""
+                <div style="
+                    background-color: #FFF3CD;
+                    border: 2px solid #FFEEBA;
+                    color: #856404;
+                    padding: 10px 15px;
+                    border-radius: 8px;
+                    margin-bottom: 10px;
+                    font-weight: bold;
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    animation: fadeIn 0.5s;
+                ">
+                    🔥 <span><b>[{song_name}]</b>이(가) 인급동의 여파로 <b>+{inc_val:,}회</b> 증가했습니다!</span>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
 
     # 조회수 내림차순 정렬
     current_sorted = sorted(st.session_state.songs, key=lambda x: x["조회수"], reverse=True)
@@ -206,7 +239,7 @@ def live_chart():
         original_tag = ' <span style="background-color: #FFD700; color: #333; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold; margin-left: 6px;">✨ 오리지널</span>' if song.get("original", False) else ''
 
         # 인급동 발동 태그
-        trending_tag = ' <span style="background-color: #FF4757; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold; margin-left: 6px; animation: blink 1s infinite;">🔥 [인급동]</span>' if song.get("is_trending", False) else ''
+        trending_tag = ' <span style="background-color: #FF4757; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold; margin-left: 6px;">🔥 [인급동]</span>' if song.get("is_trending", False) else ''
 
         # 1분 전 순위와 현재 순위 비교
         if st.session_state.tick < 20:

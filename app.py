@@ -26,10 +26,20 @@ MEMBER_THEMES = {
         "bg_color": "#ECEFF1",   # 연한 그레이 화이트 배경
         "badge": "🐱 마시로"
     },
+    "타비": {
+        "color": "#2980B9",      # 네이비/블루 계열
+        "bg_color": "#EAF2F8",   # 연한 블루 배경
+        "badge": "🧭 타비"
+    },
     "히나": {
         "color": "#FF8DA1",      # 핑크 계열
         "bg_color": "#FFF0F3",
         "badge": "🏫 히나"
+    },
+    "시로": {
+        "color": "#7F8C8D",      # 그레이 계열
+        "bg_color": "#F2F4F4",
+        "badge": "🐱 시로"
     },
 }
 
@@ -81,6 +91,30 @@ INITIAL_SONGS = [
     {"멤버": "마시로", "곡명": "연예인", "조회수": 1100000, "original": False},
     {"멤버": "마시로", "곡명": "네 기꺼이(with 부키)", "조회수": 1180000, "original": False},
     {"멤버": "마시로", "곡명": "안녕, 꽃도둑씨", "조회수": 1390000, "original": False},
+    {"멤버": "마시로", "곡명": "사랑하고 있는거야(with 타비)", "조회수": 1500000, "original": False},
+
+    # 타비
+    {"멤버": "타비", "곡명": "여로", "조회수": 1580000, "original": True},
+    {"멤버": "타비", "곡명": "그 여름의 어느날", "조회수": 1830000, "original": False},
+    {"멤버": "타비", "곡명": "그 여름에 피어나", "조회수": 1270000, "original": False},
+    {"멤버": "타비", "곡명": "낮에 뜨는 달", "조회수": 4230000, "original": False},
+    {"멤버": "타비", "곡명": "첫사랑", "조회수": 3160000, "original": False},
+    {"멤버": "타비", "곡명": "HERO", "조회수": 2220000, "original": False},
+    {"멤버": "타비", "곡명": "BE SOMEBODY", "조회수": 1720000, "original": False},
+    {"멤버": "타비", "곡명": "사신", "조회수": 2980000, "original": False},
+    {"멤버": "타비", "곡명": "안녕, 또 언젠가!(with 시로)", "조회수": 600000, "original": False},
+    {"멤버": "타비", "곡명": "새봄의 노래", "조회수": 770000, "original": False},
+    {"멤버": "타비", "곡명": "야화(with 나나)", "조회수": 1910000, "original": False},
+    {"멤버": "타비", "곡명": "Ref:rain", "조회수": 1300000, "original": False},
+    {"멤버": "타비", "곡명": "Healer", "조회수": 1070000, "original": False},
+    {"멤버": "타비", "곡명": "Soda pop", "조회수": 910000, "original": False},
+    {"멤버": "타비", "곡명": "Number one rockstar", "조회수": 530000, "original": False},
+    {"멤버": "타비", "곡명": "한페이지가 될 수 있게", "조회수": 1080000, "original": False},
+    {"멤버": "타비", "곡명": "사랑 감기에 실려", "조회수": 1140000, "original": False},
+    {"멤버": "타비", "곡명": "밤새도록 널 생각해", "조회수": 730000, "original": False},
+    {"멤버": "타비", "곡명": "행운을 빌어줘", "조회수": 1350000, "original": False},
+    {"멤버": "타비", "곡명": "High Hopes", "조회수": 1250000, "original": False},
+    {"멤버": "타비", "곡명": "물떼새", "조회수": 940000, "original": False},
 ]
 
 # 4. 세션 상태(게임 데이터) 초기화
@@ -149,11 +183,15 @@ def live_chart():
         rank = idx + 1
         member = song["멤버"]
         
-        # 'Dear my fairy' 곡은 히나 & 마시로 특수 듀엣 배지 적용
+        # 특수 듀엣 배지 처리
         if song["곡명"] == "Dear my fairy":
             badge_html = '<span style="background: linear-gradient(135deg, #FF8DA1, #607D8B); color: white; padding: 4px 10px; border-radius: 15px; font-size: 0.85em; font-weight: bold;">🏫히나 & 🐱마시로</span>'
             left_border_color = "#FF8DA1"
             bg_color = "#FFF5F7"
+        elif song["곡명"] == "사랑하고 있는거야(with 타비)":
+            badge_html = '<span style="background: linear-gradient(135deg, #607D8B, #2980B9); color: white; padding: 4px 10px; border-radius: 15px; font-size: 0.85em; font-weight: bold;">🐱마시로 & 🧭타비</span>'
+            left_border_color = "#2980B9"
+            bg_color = "#EAF2F8"
         else:
             theme = MEMBER_THEMES.get(member, {"color": "#888888", "bg_color": "#F0F0F0", "badge": member})
             badge_html = f'<span style="background-color: {theme["color"]}; color: white; padding: 4px 10px; border-radius: 15px; font-size: 0.85em; font-weight: bold;">{theme["badge"]}</span>'

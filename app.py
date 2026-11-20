@@ -343,7 +343,7 @@ if "songs" not in st.session_state:
     st.session_state.live_timer = 0
     st.session_state.news_feed = ["📢 실시간 노래 차트 집계가 시작되었습니다! (서바이벌 모드 활성화)"]
     st.session_state.history_1st_counts = {}
-    st.session_state.eliminated_songs = []  # 탈락한 곡 목록 및 사유
+    st.session_state.eliminated_songs = []
 else:
     for i, song in enumerate(st.session_state.songs):
         if "prev_rank_1m" not in song:
@@ -391,15 +391,12 @@ def evaluate_and_eliminate():
 
     current_sorted = sorted(st.session_state.songs, key=lambda x: x["조회수"], reverse=True)
     
-    # 평가 지표 산출: 하위 30% 그룹 중에서 (조회수 + 최근 변동폭 + 초기 대비 순위 하락폭)을 종합 고려해 가장 부진한 곡 선정
     candidates = current_sorted[int(len(current_sorted) * 0.7):]
     if not candidates:
         candidates = current_sorted[-3:]
     
-    # 가장 점수가 낮은(부진한) 곡 선택 (조회수와 변동폭이 작을수록 가중치 부여)
     worst_song = min(candidates, key=lambda x: x["조회수"] + (x.get("변동", 0) * 5))
     
-    # 탈락 사유 생성 로직
     reasons = [
         f"최근 시청자 유입 정체 및 신곡들에 밀려 화제성 급감 (최근 증가량: +{worst_song.get('변동', 0):,}회)",
         f"휴식기(너프) 여파를 이기지 못하고 팬덤 화력 분산 발생",
@@ -408,7 +405,6 @@ def evaluate_and_eliminate():
     ]
     chosen_reason = random.choice(reasons)
     
-    # 탈락 처리
     st.session_state.songs.remove(worst_song)
     st.session_state.eliminated_songs.insert(0, {
         "곡명": worst_song["곡명"],
@@ -474,7 +470,6 @@ with col2:
                     milestone = (song["조회수"] // 1000000) * 100
                     add_news(f"🎉 [대기록] {song['멤버']} '{song['곡명']}' 조회수 {milestone:,}만 돌파!")
 
-        # 30분 스킵 완료 시 탈락 이벤트 1회 강제 실행 (서바이벌 모드가 켜져 있을 때)
         if survival_mode:
             evaluate_and_eliminate()
 
@@ -553,7 +548,6 @@ def live_chart():
     prev_top1_key = (prev_sorted[0]["멤버"], prev_sorted[0]["곡명"]) if prev_sorted else None
     
     if st.session_state.is_running and st.session_state.tick > 0:
-        # 30분(600틱, 3초 * 200 = 600초 -> 실시간 기준 200틱마다 1곡씩 탈락)
         if survival_mode and st.session_state.tick > 0 and st.session_state.tick % 200 == 0:
             evaluate_and_eliminate()
 
@@ -620,7 +614,7 @@ def live_chart():
     
     if current_sorted:
         top1_song_key = f"{current_sorted[0]['멤버']} - {current_sorted[0]['곡명']}"
-        st.session_state.history_1st_counts[top1_key_str := top1_song_key] = st.session_state.history_1st_counts.get(top1_key_str, 0) + 3
+        st.session_state.history_1st_counts[top1_song_key] = st.session_state.history_1st_counts.get(top1_song_key, 0) + 3
 
     if current_sorted and prev_top1_key and st.session_state.tick > 1:
         curr_top1 = current_sorted[0]

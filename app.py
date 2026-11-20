@@ -647,7 +647,7 @@ def live_chart():
                         text-align: center;
                         margin-bottom: 15px;
                     ">
-                        <div style="font-weight: 800; font-size: 1.1em;">{idx+1위} {t_name}</div>
+                        <div style="font-weight: 800; font-size: 1.1em;">{idx+1}위 {t_name}</div>
                         <div style="font-size: 0.9em; font-weight: bold; color: #333;">{format_views(t_val)}</div>
                     </div>
                     """,

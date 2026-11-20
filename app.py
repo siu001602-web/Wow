@@ -341,7 +341,9 @@ if "songs" not in st.session_state:
     st.session_state.recent_trending = []
     st.session_state.active_live_member = None
     st.session_state.live_timer = 0
-    st.session_state.news_feed = ["📢 실시간 노래 차트 집계가 시작되었습니다!"]
+    st.session_state.news_feed = ["📢 실시간 노래 차트 집계가 시작되었습니다! (서바이벌 모드 활성화)"]
+    st.session_state.history_1st_counts = {}
+    st.session_state.eliminated_songs = []  # 탈락한 곡 목록 및 사유
 else:
     for i, song in enumerate(st.session_state.songs):
         if "prev_rank_1m" not in song:
@@ -367,6 +369,10 @@ if "live_timer" not in st.session_state:
     st.session_state.live_timer = 0
 if "news_feed" not in st.session_state:
     st.session_state.news_feed = ["📢 실시간 노래 차트 집계가 시작되었습니다!"]
+if "history_1st_counts" not in st.session_state:
+    st.session_state.history_1st_counts = {}
+if "eliminated_songs" not in st.session_state:
+    st.session_state.eliminated_songs = []
 
 def add_news(msg):
     if not st.session_state.news_feed or st.session_state.news_feed[0] != msg:
@@ -377,10 +383,46 @@ def format_views(views):
     man = views / 10000
     return f"{man:,.2f}만 ({views:,}회)"
 
-# --- 사이드바: 최애 곡 관리 및 팀전 모드 설정 ---
-st.sidebar.title("⚙️ 시뮬레이터 설정")
+# --- 💀 서바이벌 탈락 로직 함수 ---
+def evaluate_and_eliminate():
+    if len(st.session_state.songs) <= 3:
+        add_news("⚠️ 곡이 너무 적어 탈락 시스템이 일시 중지됩니다.")
+        return
 
+    current_sorted = sorted(st.session_state.songs, key=lambda x: x["조회수"], reverse=True)
+    
+    # 평가 지표 산출: 하위 30% 그룹 중에서 (조회수 + 최근 변동폭 + 초기 대비 순위 하락폭)을 종합 고려해 가장 부진한 곡 선정
+    candidates = current_sorted[int(len(current_sorted) * 0.7):]
+    if not candidates:
+        candidates = current_sorted[-3:]
+    
+    # 가장 점수가 낮은(부진한) 곡 선택 (조회수와 변동폭이 작을수록 가중치 부여)
+    worst_song = min(candidates, key=lambda x: x["조회수"] + (x.get("변동", 0) * 5))
+    
+    # 탈락 사유 생성 로직
+    reasons = [
+        f"최근 시청자 유입 정체 및 신곡들에 밀려 화제성 급감 (최근 증가량: +{worst_song.get('변동', 0):,}회)",
+        f"휴식기(너프) 여파를 이기지 못하고 팬덤 화력 분산 발생",
+        f"초기 순위 대비 하락세가 지속되며 알고리즘 추천 이탈 발생",
+        f"타 멤버들의 스페셜 라이브 공세 속에서 독자적인 청취층 확보 실패"
+    ]
+    chosen_reason = random.choice(reasons)
+    
+    # 탈락 처리
+    st.session_state.songs.remove(worst_song)
+    st.session_state.eliminated_songs.insert(0, {
+        "곡명": worst_song["곡명"],
+        "멤버": worst_song["멤버"],
+        "최종조회수": worst_song["조회수"],
+        "사유": chosen_reason
+    })
+    
+    add_news(f"💀 [서바이벌 탈락] {worst_song['멤버']} '{worst_song['곡명']}' 최저 성장률로 차트 영구 퇴출!")
+
+# --- 사이드바 설정 ---
+st.sidebar.title("⚙️ 시뮬레이터 설정")
 team_mode = st.sidebar.checkbox("👥 멤버별 팀전(진영 대항전) 모드 켜기", value=False)
+survival_mode = st.sidebar.checkbox("💀 30분(600틱)마다 최저성장 곡 탈락 모드", value=True)
 
 st.sidebar.markdown("---")
 st.sidebar.title("💖 내 최애 곡 관리")
@@ -432,7 +474,16 @@ with col2:
                     milestone = (song["조회수"] // 1000000) * 100
                     add_news(f"🎉 [대기록] {song['멤버']} '{song['곡명']}' 조회수 {milestone:,}만 돌파!")
 
-        new_top1 = sorted(st.session_state.songs, key=lambda x: x["조회수"], reverse=True)[0]
+        # 30분 스킵 완료 시 탈락 이벤트 1회 강제 실행 (서바이벌 모드가 켜져 있을 때)
+        if survival_mode:
+            evaluate_and_eliminate()
+
+        curr_sorted_after_skip = sorted(st.session_state.songs, key=lambda x: x["조회수"], reverse=True)
+        if curr_sorted_after_skip:
+            top1_key = f"{curr_sorted_after_skip[0]['멤버']} - {curr_sorted_after_skip[0]['곡명']}"
+            st.session_state.history_1st_counts[top1_key] = st.session_state.history_1st_counts.get(top1_key, 0) + 600
+
+        new_top1 = curr_sorted_after_skip[0]
         if (prev_top1["멤버"], prev_top1["곡명"]) != (new_top1["멤버"], new_top1["곡명"]):
             add_news(f"👑 [왕좌 교체] 30분 스킵 결과, {new_top1['멤버']} '{new_top1['곡명']}' 1위 등극!")
         else:
@@ -447,7 +498,51 @@ with col3:
         st.session_state.active_live_member = None
         st.session_state.live_timer = 0
         st.session_state.news_feed = ["📢 차트가 초기화되었습니다! 새로운 집계 시작!"]
+        st.session_state.history_1st_counts = {}
+        st.session_state.eliminated_songs = []
         st.rerun()
+
+# --- 명예의 전당 및 탈락 곡 리포트 보기 영역 ---
+with st.expander("🏆 [결산 리포트] 실시간 명예의 전당 및 탈락 곡 보기", expanded=False):
+    st.markdown("### 🌟 시뮬레이션 히스토리 요약")
+    
+    current_sorted_eval = sorted(st.session_state.songs, key=lambda x: x["조회수"], reverse=True)
+    
+    col_h1, col_h2 = st.columns(2)
+    with col_h1:
+        st.markdown("#### 👑 최장기 왕좌 (1위 누적 유지)")
+        if st.session_state.history_1st_counts:
+            best_1st_song = max(st.session_state.history_1st_counts.items(), key=lambda x: x[1])
+            st.info(f"🏆 **{best_1st_song[0]}**\n\n(약 {best_1st_song[1] * 3}초 동안 왕좌 사수)")
+        else:
+            if current_sorted_eval:
+                st.info(f"👑 현재 1위: **{current_sorted_eval[0]['멤버']} - {current_sorted_eval[0]['곡명']}**")
+            else:
+                st.write("아직 기록된 데이터가 없습니다.")
+
+    with col_h2:
+        st.markdown("#### 🚀 최고 순위 급상승 (초기 대비)")
+        best_climber = max(current_sorted_eval, key=lambda x: x.get("initial_rank", 1) - (current_sorted_eval.index(x) + 1))
+        climber_diff = best_climber.get("initial_rank", 1) - (current_sorted_eval.index(best_climber) + 1)
+        if climber_diff > 0:
+            st.success(f"📈 **{best_climber['멤버']} - {best_climber['곡명']}**\n\n(초기 {best_climber.get('initial_rank')}위 ➡️ 현재 {current_sorted_eval.index(best_climber)+1}위, **+{climber_diff}계단** 상승!)")
+        else:
+            st.write("아직 큰 순위 변동이 없습니다.")
+
+    st.markdown("---")
+    st.markdown("#### 💀 서바이벌 탈락 곡 기록")
+    if st.session_state.eliminated_songs:
+        for elim in st.session_state.eliminated_songs:
+            st.warning(f"❌ **[{elim['멤버']}] {elim['곡명']}** (최종 조회수: {format_views(elim['최종조회수'])})\n\n💡 **탈락 사유:** {elim['사유']}")
+    else:
+        st.write("아직 탈락한 곡이 없습니다. (서바이벌이 진행되면 여기에 기록됩니다)")
+
+    st.markdown("---")
+    st.markdown("#### 🥉 현재 생존 TOP 3 요약")
+    for top_idx in range(min(3, len(current_sorted_eval))):
+        ts = current_sorted_eval[top_idx]
+        medals = ["🥇", "🥈", "🥉"]
+        st.write(f"{medals[top_idx]} **{top_idx+1}위** | [{ts['멤버']}] {ts['곡명']} — {format_views(ts['조회수'])}")
 
 # 5. 3초마다 자동 실행되는 실시간 차트 영역
 @st.fragment(run_every=3)
@@ -458,6 +553,10 @@ def live_chart():
     prev_top1_key = (prev_sorted[0]["멤버"], prev_sorted[0]["곡명"]) if prev_sorted else None
     
     if st.session_state.is_running and st.session_state.tick > 0:
+        # 30분(600틱, 3초 * 200 = 600초 -> 실시간 기준 200틱마다 1곡씩 탈락)
+        if survival_mode and st.session_state.tick > 0 and st.session_state.tick % 200 == 0:
+            evaluate_and_eliminate()
+
         if st.session_state.tick % 20 == 0:
             snapshot_ranks = {(song["멤버"], song["곡명"]): idx + 1 for idx, song in enumerate(prev_sorted)}
             for song in st.session_state.songs:
@@ -518,6 +617,11 @@ def live_chart():
     st.session_state.recent_trending = triggered_list
 
     current_sorted = sorted(st.session_state.songs, key=lambda x: x["조회수"], reverse=True)
+    
+    if current_sorted:
+        top1_song_key = f"{current_sorted[0]['멤버']} - {current_sorted[0]['곡명']}"
+        st.session_state.history_1st_counts[top1_key_str := top1_song_key] = st.session_state.history_1st_counts.get(top1_key_str, 0) + 3
+
     if current_sorted and prev_top1_key and st.session_state.tick > 1:
         curr_top1 = current_sorted[0]
         if (curr_top1["멤버"], curr_top1["곡명"]) != prev_top1_key:
@@ -656,7 +760,7 @@ def live_chart():
         st.markdown("---")
 
     status_text = "🟢 실시간 집계 중 (3초 갱신 / 1분 단위 순위 반영)" if st.session_state.is_running else "⏸️ 일시정지됨"
-    st.caption(f"{status_text} | 총 {len(current_sorted)}곡 경쟁 중 | 경과 시간: {(st.session_state.tick - 1) * 3}초")
+    st.caption(f"{status_text} | 생존 곡: {len(current_sorted)}곡 경쟁 중 | 경과 시간: {(st.session_state.tick - 1) * 3}초")
 
     for idx, song in enumerate(current_sorted):
         rank = idx + 1

@@ -332,7 +332,7 @@ INITIAL_SONGS = [
 # 4. 세션 상태 초기화
 def init_songs():
     sorted_init = sorted(INITIAL_SONGS, key=lambda x: x["조회수"], reverse=True)
-    return [dict(song, 변동=0, prev_rank_1m=i+1, initial_rank=i+1, is_trending=False, is_live=False) for i, song in enumerate(sorted_init)]
+    return [dict(song, 변동=0, prev_rank_1m=i+1, initial_rank=i+1, is_trending=False, is_live=False, buff=None) for i, song in enumerate(sorted_init)]
 
 if "songs" not in st.session_state:
     st.session_state.songs = init_songs()
@@ -356,6 +356,8 @@ else:
             song["is_trending"] = False
         if "is_live" not in song:
             song["is_live"] = False
+        if "buff" not in song:
+            song["buff"] = None
 
 if "recent_trending" not in st.session_state:
     st.session_state.recent_trending = []
@@ -369,13 +371,18 @@ if "news_feed" not in st.session_state:
 def add_news(msg):
     if not st.session_state.news_feed or st.session_state.news_feed[0] != msg:
         st.session_state.news_feed.insert(0, msg)
-        st.session_state.news_feed = st.session_state.news_feed[:5]  # 최근 5개 속보 유지
+        st.session_state.news_feed = st.session_state.news_feed[:5]
 
 def format_views(views):
     man = views / 10000
     return f"{man:,.2f}만 ({views:,}회)"
 
-# --- 사이드바: 최애 곡 지정 (최대 10개) ---
+# --- 사이드바: 최애 곡 관리 및 팀전 모드 설정 ---
+st.sidebar.title("⚙️ 시뮬레이터 설정")
+
+team_mode = st.sidebar.checkbox("👥 멤버별 팀전(진영 대항전) 모드 켜기", value=False)
+
+st.sidebar.markdown("---")
 st.sidebar.title("💖 내 최애 곡 관리")
 st.sidebar.markdown("차트에서 강조해서 볼 곡을 최대 **10개**까지 선택하세요!")
 
@@ -412,14 +419,15 @@ with col2:
             
             for song in st.session_state.songs:
                 old_views = song["조회수"]
-                if random.random() < 0.001:
-                    inc = random.randint(10000, 200000)
-                else:
-                    inc = random.randint(100, 10000)
+                inc = random.randint(100, 10000)
+                if song.get("buff") == "buff":
+                    inc *= 3
+                elif song.get("buff") == "nerf":
+                    inc //= 3
+                
                 song["조회수"] += inc
                 song["변동"] = inc
 
-                # 100만 단위 돌파 속보 체크
                 if old_views // 1000000 < song["조회수"] // 1000000:
                     milestone = (song["조회수"] // 1000000) * 100
                     add_news(f"🎉 [대기록] {song['멤버']} '{song['곡명']}' 조회수 {milestone:,}만 돌파!")
@@ -446,7 +454,6 @@ with col3:
 def live_chart():
     triggered_list = []
     
-    # 이전 틱의 1위 곡 기억
     prev_sorted = sorted(st.session_state.songs, key=lambda x: x["조회수"], reverse=True)
     prev_top1_key = (prev_sorted[0]["멤버"], prev_sorted[0]["곡명"]) if prev_sorted else None
     
@@ -455,6 +462,20 @@ def live_chart():
             snapshot_ranks = {(song["멤버"], song["곡명"]): idx + 1 for idx, song in enumerate(prev_sorted)}
             for song in st.session_state.songs:
                 song["prev_rank_1m"] = snapshot_ranks[(song["멤버"], song["곡명"])]
+
+        # 무작위 버프/너프 카드 이벤트
+        if random.random() < 0.03:
+            target_song = random.choice(st.session_state.songs)
+            if target_song.get("buff") is None:
+                effect_type = random.choice(["buff", "nerf"])
+                target_song["buff"] = effect_type
+                if effect_type == "buff":
+                    add_news(f"🚀 [돌발 버프] {target_song['멤버']} '{target_song['곡명']}' 떡상 버프 발동! (+조회수 3배)")
+                else:
+                    add_news(f"💤 [돌발 너프] {target_song['멤버']} '{target_song['곡명']}' 휴식기 너프 발동! (-조회수 감소)")
+            else:
+                add_news(f"✨ [효과 종료] {target_song['멤버']} '{target_song['곡명']}' 버프/너프 효과가 종료되었습니다.")
+                target_song["buff"] = None
 
         if st.session_state.live_timer > 0:
             st.session_state.live_timer -= 1
@@ -478,13 +499,17 @@ def live_chart():
                 song["is_trending"] = False
                 inc = random.randint(100, 10000)
                 
+                if song.get("buff") == "buff":
+                    inc *= 3
+                elif song.get("buff") == "nerf":
+                    inc //= 3
+
                 if song["멤버"] == st.session_state.active_live_member:
                     inc = int(inc * random.uniform(1.2, 2.0))
             
             song["조회수"] += inc
             song["변동"] = inc
 
-            # 100만 단위 조회수 돌파 체크
             if old_views // 1000000 < song["조회수"] // 1000000:
                 milestone = (song["조회수"] // 1000000) * 100
                 add_news(f"🎉 [경축] {song['멤버']} '{song['곡명']}' 조회수 {milestone:,}만 돌파!")
@@ -492,7 +517,6 @@ def live_chart():
     st.session_state.tick += 1
     st.session_state.recent_trending = triggered_list
 
-    # 조회수 내림차순 정렬 및 1위 변동 체크
     current_sorted = sorted(st.session_state.songs, key=lambda x: x["조회수"], reverse=True)
     if current_sorted and prev_top1_key and st.session_state.tick > 1:
         curr_top1 = current_sorted[0]
@@ -599,6 +623,38 @@ def live_chart():
                 unsafe_allow_html=True
             )
 
+    # --- 팀전 모드가 켜져 있을 때 멤버별 총합 조회수 순위 표시 ---
+    if team_mode:
+        team_totals = {}
+        for song in st.session_state.songs:
+            m = song["멤버"]
+            team_totals[m] = team_totals.get(m, 0) + song["조회수"]
+        
+        sorted_teams = sorted(team_totals.items(), key=lambda x: x[1], reverse=True)
+
+        st.markdown("### 🏆 [진영 대항전] 멤버별 총합 조회수 순위")
+        team_cols = st.columns(len(sorted_teams))
+        for idx, (t_name, t_val) in enumerate(sorted_teams):
+            t_theme = MEMBER_THEMES.get(t_name, {"color": "#888"})
+            with team_cols[idx % len(team_cols)]:
+                st.markdown(
+                    f"""
+                    <div style="
+                        background-color: {t_theme.get('bg_color', '#f8f9fa')};
+                        border: 2px solid {t_theme.get('color', '#888')};
+                        padding: 10px;
+                        border-radius: 8px;
+                        text-align: center;
+                        margin-bottom: 15px;
+                    ">
+                        <div style="font-weight: 800; font-size: 1.1em;">{idx+1위} {t_name}</div>
+                        <div style="font-size: 0.9em; font-weight: bold; color: #333;">{format_views(t_val)}</div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+        st.markdown("---")
+
     status_text = "🟢 실시간 집계 중 (3초 갱신 / 1분 단위 순위 반영)" if st.session_state.is_running else "⏸️ 일시정지됨"
     st.caption(f"{status_text} | 총 {len(current_sorted)}곡 경쟁 중 | 경과 시간: {(st.session_state.tick - 1) * 3}초")
 
@@ -610,6 +666,12 @@ def live_chart():
         
         is_favorite = song_key in st.session_state.favorite_songs
         fav_badge = ' <span style="background-color: #E67E22; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold; margin-left: 6px;">👑 최애</span>' if is_favorite else ''
+
+        buff_badge = ''
+        if song.get("buff") == "buff":
+            buff_badge = ' <span style="background-color: #27AE60; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold; margin-left: 6px;">🚀 떡상중(3배)</span>'
+        elif song.get("buff") == "nerf":
+            buff_badge = ' <span style="background-color: #7F8C8D; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold; margin-left: 6px;">💤 휴식기</span>'
 
         if song["곡명"] == "Dear my fairy":
             badge_html = '<span style="background: linear-gradient(135deg, #FF8DA1, #607D8B); color: white; padding: 4px 10px; border-radius: 15px; font-size: 0.85em; font-weight: bold;">🏫히나 & 🐱마시로</span>'
@@ -668,7 +730,7 @@ def live_chart():
                     </div>
                     {badge_html}
                     <span style="font-size: 1.1em; font-weight: 700; color: {text_color};">
-                        {song['곡명']}{fav_badge}{original_tag}{trending_tag}{live_tag}
+                        {song['곡명']}{fav_badge}{buff_badge}{original_tag}{trending_tag}{live_tag}
                     </span>
                 </div>
                 <div style="text-align: right;">

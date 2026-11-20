@@ -332,7 +332,7 @@ INITIAL_SONGS = [
 # 4. 세션 상태 초기화
 def init_songs():
     sorted_init = sorted(INITIAL_SONGS, key=lambda x: x["조회수"], reverse=True)
-    return [dict(song, 변동=0, prev_rank_1m=i+1, initial_rank=i+1, is_trending=False, is_live=False, buff=None, buff_timer=0) for i, song in enumerate(sorted_init)]
+    return [dict(song, 변동=0, avg_growth=5000.0, prev_rank_1m=i+1, initial_rank=i+1, is_trending=False, is_live=False, buff=None, buff_timer=0) for i, song in enumerate(sorted_init)]
 
 if "songs" not in st.session_state:
     st.session_state.songs = init_songs()
@@ -341,7 +341,7 @@ if "songs" not in st.session_state:
     st.session_state.recent_trending = []
     st.session_state.active_live_member = None
     st.session_state.live_timer = 0
-    st.session_state.news_feed = ["📢 실시간 노래 차트 집계가 시작되었습니다! (버프/너프 지속시간 10분 적용)"]
+    st.session_state.news_feed = ["📢 실시간 노래 차트 집계가 시작되었습니다! (성장률 중심 서바이벌 모드)"]
     st.session_state.history_1st_counts = {}
     st.session_state.eliminated_songs = []
 else:
@@ -352,6 +352,8 @@ else:
             song["initial_rank"] = i + 1
         if "변동" not in song:
             song["변동"] = 0
+        if "avg_growth" not in song:
+            song["avg_growth"] = 5000.0
         if "original" not in song:
             song["original"] = False
         if "is_trending" not in song:
@@ -385,25 +387,21 @@ def format_views(views):
     man = views / 10000
     return f"{man:,.2f}만 ({views:,}회)"
 
-# --- 💀 서바이벌 탈락 로직 함수 ---
+# --- 💀 순수 성장률 중심 서바이벌 탈락 로직 함수 ---
 def evaluate_and_eliminate():
     if len(st.session_state.songs) <= 3:
         add_news("⚠️ 곡이 너무 적어 탈락 시스템이 일시 중지됩니다.")
         return
 
-    current_sorted = sorted(st.session_state.songs, key=lambda x: x["조회수"], reverse=True)
-    
-    candidates = current_sorted[int(len(current_sorted) * 0.7):]
-    if not candidates:
-        candidates = current_sorted[-3:]
-    
-    worst_song = min(candidates, key=lambda x: x["조회수"] + (x.get("변동", 0) * 5))
+    # 절대적인 조회수가 아니라 '평균 성장률(avg_growth)'이 가장 낮은 순으로 정렬
+    sorted_by_growth = sorted(st.session_state.songs, key=lambda x: x.get("avg_growth", 0))
+    worst_song = sorted_by_growth[0]  # 성장률이 가장 처참한 곡 1곡 확정!
     
     reasons = [
-        f"최근 시청자 유입 정체 및 신곡들에 밀려 화제성 급감 (최근 증가량: +{worst_song.get('변동', 0):,}회)",
-        f"휴식기(너프) 여파를 이기지 못하고 팬덤 화력 분산 발생",
-        f"초기 순위 대비 하락세가 지속되며 알고리즘 추천 이탈 발생",
-        f"타 멤버들의 스페셜 라이브 공세 속에서 독자적인 청취층 확보 실패"
+        f"최근 조회수 증가 평균이 급감하며 리스너 유입 정체 (평균 증가량: {worst_song.get('avg_growth', 0):,.1f}회)",
+        f"휴식기(너프) 또는 화제성 저조로 인해 팬덤 화력 및 알고리즘 추천 이탈 발생",
+        f"타 곡들의 폭발적인 성장세에 밀려 독자적인 청취층 확보 실패",
+        f"최근 집계 구간 동안 일일 증가량이 바닥을 치며 차트 경쟁력 상실"
     ]
     chosen_reason = random.choice(reasons)
     
@@ -412,10 +410,11 @@ def evaluate_and_eliminate():
         "곡명": worst_song["곡명"],
         "멤버": worst_song["멤버"],
         "최종조회수": worst_song["조회수"],
+        "평균성장률": worst_song.get("avg_growth", 0),
         "사유": chosen_reason
     })
     
-    add_news(f"💀 [서바이벌 탈락] {worst_song['멤버']} '{worst_song['곡명']}' 최저 성장률로 차트 영구 퇴출!")
+    add_news(f"💀 [서바이벌 탈락] {worst_song['멤버']} '{worst_song['곡명']}' 최저 성장률 기록으로 차트 영구 퇴출!")
 
 # --- 사이드바 설정 ---
 st.sidebar.title("⚙️ 시뮬레이터 설정")
@@ -457,7 +456,6 @@ with col2:
                 for song in st.session_state.songs:
                     song["prev_rank_1m"] = snapshot_ranks[(song["멤버"], song["곡명"])]
             
-            # 10분(200틱) 주기로 버프 타이머 감소 처리
             for song in st.session_state.songs:
                 if song.get("buff"):
                     song["buff_timer"] -= 1
@@ -473,6 +471,9 @@ with col2:
                 
                 song["조회수"] += inc
                 song["변동"] = inc
+                
+                # 평균 성장률(지수 이동 평균 형태) 실시간 업데이트
+                song["avg_growth"] = (song.get("avg_growth", inc) * 0.9) + (inc * 0.1)
 
                 if old_views // 1000000 < song["조회수"] // 1000000:
                     milestone = (song["조회수"] // 1000000) * 100
@@ -533,10 +534,10 @@ with st.expander("🏆 [결산 리포트] 실시간 명예의 전당 및 탈락 
             st.write("아직 큰 순위 변동이 없습니다.")
 
     st.markdown("---")
-    st.markdown("#### 💀 서바이벌 탈락 곡 기록")
+    st.markdown("#### 💀 서바이벌 탈락 곡 기록 (성장률 부진 기준)")
     if st.session_state.eliminated_songs:
         for elim in st.session_state.eliminated_songs:
-            st.warning(f"❌ **[{elim['멤버']}] {elim['곡명']}** (최종 조회수: {format_views(elim['최종조회수'])})\n\n💡 **탈락 사유:** {elim['사유']}")
+            st.warning(f"❌ **[{elim['멤버']}] {elim['곡명']}** (최종 조회수: {format_views(elim['최종조회수'])} | 평균 성장률: {elim['평균성장률']:,.1f}회/틱)\n\n💡 **탈락 사유:** {elim['사유']}")
     else:
         st.write("아직 탈락한 곡이 없습니다. (서바이벌이 진행되면 여기에 기록됩니다)")
 
@@ -588,7 +589,6 @@ def live_chart():
                 add_news(f"🎤 [속보] {st.session_state.active_live_member}의 스페셜 라이브가 시작되었습니다!")
 
         for song in st.session_state.songs:
-            # 버프/너프 타이머 감소 및 만료 처리
             if song.get("buff"):
                 song["buff_timer"] -= 1
                 if song["buff_timer"] <= 0:
@@ -615,6 +615,9 @@ def live_chart():
             
             song["조회수"] += inc
             song["변동"] = inc
+            
+            # 평균 성장률 업데이트 (지수 이동 평균)
+            song["avg_growth"] = (song.get("avg_growth", inc) * 0.9) + (inc * 0.1)
 
             if old_views // 1000000 < song["조회수"] // 1000000:
                 milestone = (song["조회수"] // 1000000) * 100

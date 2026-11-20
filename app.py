@@ -32,8 +32,8 @@ MEMBER_THEMES = {
         "badge": "🧭 타비"
     },
     "히나": {
-        "color": "#333333",      # 검은색 테두리/포인트
-        "bg_color": "#2C3E50",   # 다크/검은색 계열 배경
+        "color": "#333333",
+        "bg_color": "#2C3E50",
         "badge": "🏫 히나",
         "text_color": "white"
     },
@@ -341,6 +341,7 @@ if "songs" not in st.session_state:
     st.session_state.recent_trending = []
     st.session_state.active_live_member = None
     st.session_state.live_timer = 0
+    st.session_state.news_feed = ["📢 실시간 노래 차트 집계가 시작되었습니다!"]
 else:
     for i, song in enumerate(st.session_state.songs):
         if "prev_rank_1m" not in song:
@@ -362,6 +363,13 @@ if "active_live_member" not in st.session_state:
     st.session_state.active_live_member = None
 if "live_timer" not in st.session_state:
     st.session_state.live_timer = 0
+if "news_feed" not in st.session_state:
+    st.session_state.news_feed = ["📢 실시간 노래 차트 집계가 시작되었습니다!"]
+
+def add_news(msg):
+    if not st.session_state.news_feed or st.session_state.news_feed[0] != msg:
+        st.session_state.news_feed.insert(0, msg)
+        st.session_state.news_feed = st.session_state.news_feed[:5]  # 최근 5개 속보 유지
 
 def format_views(views):
     man = views / 10000
@@ -393,6 +401,7 @@ with col1:
         st.session_state.is_running = not st.session_state.is_running
 with col2:
     if st.button("⏩ 30분 스킵", use_container_width=True):
+        prev_top1 = sorted(st.session_state.songs, key=lambda x: x["조회수"], reverse=True)[0]
         for _ in range(600):
             st.session_state.tick += 1
             if st.session_state.tick % 20 == 0:
@@ -402,12 +411,24 @@ with col2:
                     song["prev_rank_1m"] = snapshot_ranks[(song["멤버"], song["곡명"])]
             
             for song in st.session_state.songs:
+                old_views = song["조회수"]
                 if random.random() < 0.001:
                     inc = random.randint(10000, 200000)
                 else:
                     inc = random.randint(100, 10000)
                 song["조회수"] += inc
                 song["변동"] = inc
+
+                # 100만 단위 돌파 속보 체크
+                if old_views // 1000000 < song["조회수"] // 1000000:
+                    milestone = (song["조회수"] // 1000000) * 100
+                    add_news(f"🎉 [대기록] {song['멤버']} '{song['곡명']}' 조회수 {milestone:,}만 돌파!")
+
+        new_top1 = sorted(st.session_state.songs, key=lambda x: x["조회수"], reverse=True)[0]
+        if (prev_top1["멤버"], prev_top1["곡명"]) != (new_top1["멤버"], new_top1["곡명"]):
+            add_news(f"👑 [왕좌 교체] 30분 스킵 결과, {new_top1['멤버']} '{new_top1['곡명']}' 1위 등극!")
+        else:
+            add_news(f"⏩ 30분 스킵 완료! 현재 1위는 {new_top1['멤버']} '{new_top1['곡명']}'입니다.")
         st.rerun()
 
 with col3:
@@ -417,6 +438,7 @@ with col3:
         st.session_state.recent_trending = []
         st.session_state.active_live_member = None
         st.session_state.live_timer = 0
+        st.session_state.news_feed = ["📢 차트가 초기화되었습니다! 새로운 집계 시작!"]
         st.rerun()
 
 # 5. 3초마다 자동 실행되는 실시간 차트 영역
@@ -424,10 +446,13 @@ with col3:
 def live_chart():
     triggered_list = []
     
+    # 이전 틱의 1위 곡 기억
+    prev_sorted = sorted(st.session_state.songs, key=lambda x: x["조회수"], reverse=True)
+    prev_top1_key = (prev_sorted[0]["멤버"], prev_sorted[0]["곡명"]) if prev_sorted else None
+    
     if st.session_state.is_running and st.session_state.tick > 0:
         if st.session_state.tick % 20 == 0:
-            current_sorted_for_snapshot = sorted(st.session_state.songs, key=lambda x: x["조회수"], reverse=True)
-            snapshot_ranks = {(song["멤버"], song["곡명"]): idx + 1 for idx, song in enumerate(current_sorted_for_snapshot)}
+            snapshot_ranks = {(song["멤버"], song["곡명"]): idx + 1 for idx, song in enumerate(prev_sorted)}
             for song in st.session_state.songs:
                 song["prev_rank_1m"] = snapshot_ranks[(song["멤버"], song["곡명"])]
 
@@ -440,12 +465,15 @@ def live_chart():
             if random.random() < 0.005:
                 st.session_state.active_live_member = random.choice(members)
                 st.session_state.live_timer = 10
+                add_news(f"🎤 [속보] {st.session_state.active_live_member}의 스페셜 라이브가 시작되었습니다!")
 
         for song in st.session_state.songs:
+            old_views = song["조회수"]
             if random.random() < 0.001:
                 song["is_trending"] = True
                 inc = random.randint(10000, 200000)
                 triggered_list.append((song["곡명"], inc))
+                add_news(f"🔥 [인급동] {song['멤버']} '{song['곡명']}' 인기 급상승! (+{inc:,}회)")
             else:
                 song["is_trending"] = False
                 inc = random.randint(100, 10000)
@@ -456,8 +484,75 @@ def live_chart():
             song["조회수"] += inc
             song["변동"] = inc
 
+            # 100만 단위 조회수 돌파 체크
+            if old_views // 1000000 < song["조회수"] // 1000000:
+                milestone = (song["조회수"] // 1000000) * 100
+                add_news(f"🎉 [경축] {song['멤버']} '{song['곡명']}' 조회수 {milestone:,}만 돌파!")
+
     st.session_state.tick += 1
     st.session_state.recent_trending = triggered_list
+
+    # 조회수 내림차순 정렬 및 1위 변동 체크
+    current_sorted = sorted(st.session_state.songs, key=lambda x: x["조회수"], reverse=True)
+    if current_sorted and prev_top1_key and st.session_state.tick > 1:
+        curr_top1 = current_sorted[0]
+        if (curr_top1["멤버"], curr_top1["곡명"]) != prev_top1_key:
+            add_news(f"👑 [1위 역전] {curr_top1['멤버']} '{curr_top1['곡명']}' 차트 정상 탈환!")
+
+    # --- 📰 실시간 차트 속보 뉴스 티커 (전광판) 렌더링 ---
+    ticker_items = " &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp; ".join(st.session_state.news_feed)
+    st.markdown(
+        f"""
+        <style>
+        @keyframes ticker-scroll {{
+            0% {{ transform: translateX(100%); }}
+            100% {{ transform: translateX(-100%); }}
+        }}
+        .news-ticker-container {{
+            background-color: #1E1E2E;
+            color: #F8F8F2;
+            border: 2px solid #FF4757;
+            border-radius: 8px;
+            padding: 8px 15px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        }}
+        .news-ticker-badge {{
+            background-color: #FF4757;
+            color: white;
+            font-weight: 800;
+            padding: 3px 10px;
+            border-radius: 5px;
+            margin-right: 15px;
+            white-space: nowrap;
+            font-size: 0.9em;
+            z-index: 2;
+        }}
+        .news-ticker-wrap {{
+            flex: 1;
+            overflow: hidden;
+            white-space: nowrap;
+        }}
+        .news-ticker-text {{
+            display: inline-block;
+            font-weight: 600;
+            font-size: 0.95em;
+            color: #FFEAA7;
+            animation: ticker-scroll 22s linear infinite;
+        }}
+        </style>
+        <div class="news-ticker-container">
+            <div class="news-ticker-badge">📰 실시간 속보</div>
+            <div class="news-ticker-wrap">
+                <div class="news-ticker-text">{ticker_items}</div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
     if st.session_state.active_live_member:
         live_info = MEMBER_THEMES.get(st.session_state.active_live_member, {})
@@ -504,8 +599,6 @@ def live_chart():
                 unsafe_allow_html=True
             )
 
-    current_sorted = sorted(st.session_state.songs, key=lambda x: x["조회수"], reverse=True)
-
     status_text = "🟢 실시간 집계 중 (3초 갱신 / 1분 단위 순위 반영)" if st.session_state.is_running else "⏸️ 일시정지됨"
     st.caption(f"{status_text} | 총 {len(current_sorted)}곡 경쟁 중 | 경과 시간: {(st.session_state.tick - 1) * 3}초")
 
@@ -551,7 +644,6 @@ def live_chart():
         rank_num_color = "white" if member == "히나" else "#222"
         views_color = "white" if member == "히나" else "#222"
 
-        # 최애 곡인 경우 카드 테두리에 골드빛 강조 효과 부여
         card_border = "3px solid #F1C40F" if is_favorite else f"8px solid {left_border_color}"
 
         st.markdown(

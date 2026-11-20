@@ -332,7 +332,7 @@ INITIAL_SONGS = [
 # 4. 세션 상태 초기화
 def init_songs():
     sorted_init = sorted(INITIAL_SONGS, key=lambda x: x["조회수"], reverse=True)
-    return [dict(song, 변동=0, prev_rank_1m=i+1, initial_rank=i+1, is_trending=False, is_live=False, buff=None) for i, song in enumerate(sorted_init)]
+    return [dict(song, 변동=0, prev_rank_1m=i+1, initial_rank=i+1, is_trending=False, is_live=False, buff=None, buff_timer=0) for i, song in enumerate(sorted_init)]
 
 if "songs" not in st.session_state:
     st.session_state.songs = init_songs()
@@ -341,7 +341,7 @@ if "songs" not in st.session_state:
     st.session_state.recent_trending = []
     st.session_state.active_live_member = None
     st.session_state.live_timer = 0
-    st.session_state.news_feed = ["📢 실시간 노래 차트 집계가 시작되었습니다! (서바이벌 모드 활성화)"]
+    st.session_state.news_feed = ["📢 실시간 노래 차트 집계가 시작되었습니다! (버프/너프 지속시간 10분 적용)"]
     st.session_state.history_1st_counts = {}
     st.session_state.eliminated_songs = []
 else:
@@ -360,6 +360,8 @@ else:
             song["is_live"] = False
         if "buff" not in song:
             song["buff"] = None
+        if "buff_timer" not in song:
+            song["buff_timer"] = 0
 
 if "recent_trending" not in st.session_state:
     st.session_state.recent_trending = []
@@ -455,7 +457,13 @@ with col2:
                 for song in st.session_state.songs:
                     song["prev_rank_1m"] = snapshot_ranks[(song["멤버"], song["곡명"])]
             
+            # 10분(200틱) 주기로 버프 타이머 감소 처리
             for song in st.session_state.songs:
+                if song.get("buff"):
+                    song["buff_timer"] -= 1
+                    if song["buff_timer"] <= 0:
+                        song["buff"] = None
+
                 old_views = song["조회수"]
                 inc = random.randint(100, 10000)
                 if song.get("buff") == "buff":
@@ -556,19 +564,17 @@ def live_chart():
             for song in st.session_state.songs:
                 song["prev_rank_1m"] = snapshot_ranks[(song["멤버"], song["곡명"])]
 
-        # 무작위 버프/너프 카드 이벤트
+        # 무작위 버프/너프 카드 이벤트 (10분 = 200틱 동안 유지)
         if random.random() < 0.03:
             target_song = random.choice(st.session_state.songs)
             if target_song.get("buff") is None:
                 effect_type = random.choice(["buff", "nerf"])
                 target_song["buff"] = effect_type
+                target_song["buff_timer"] = 200  # 3초 * 200 = 600초 (10분)
                 if effect_type == "buff":
-                    add_news(f"🚀 [돌발 버프] {target_song['멤버']} '{target_song['곡명']}' 떡상 버프 발동! (+조회수 3배)")
+                    add_news(f"🚀 [돌발 버프] {target_song['멤버']} '{target_song['곡명']}' 떡상 버프 발동! (10분간 조회수 3배)")
                 else:
-                    add_news(f"💤 [돌발 너프] {target_song['멤버']} '{target_song['곡명']}' 휴식기 너프 발동! (-조회수 감소)")
-            else:
-                add_news(f"✨ [효과 종료] {target_song['멤버']} '{target_song['곡명']}' 버프/너프 효과가 종료되었습니다.")
-                target_song["buff"] = None
+                    add_news(f"💤 [돌발 너프] {target_song['멤버']} '{target_song['곡명']}' 휴식기 너프 발동! (10분간 조회수 감소)")
 
         if st.session_state.live_timer > 0:
             st.session_state.live_timer -= 1
@@ -582,6 +588,13 @@ def live_chart():
                 add_news(f"🎤 [속보] {st.session_state.active_live_member}의 스페셜 라이브가 시작되었습니다!")
 
         for song in st.session_state.songs:
+            # 버프/너프 타이머 감소 및 만료 처리
+            if song.get("buff"):
+                song["buff_timer"] -= 1
+                if song["buff_timer"] <= 0:
+                    add_news(f"✨ [효과 종료] {song['멤버']} '{song['곡명']}' 10분간의 버프/너프 효과가 종료되었습니다.")
+                    song["buff"] = None
+
             old_views = song["조회수"]
             if random.random() < 0.001:
                 song["is_trending"] = True
@@ -767,9 +780,13 @@ def live_chart():
 
         buff_badge = ''
         if song.get("buff") == "buff":
-            buff_badge = ' <span style="background-color: #27AE60; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold; margin-left: 6px;">🚀 떡상중(3배)</span>'
+            remain_min = (song.get("buff_timer", 0) * 3) // 60
+            remain_sec = (song.get("buff_timer", 0) * 3) % 60
+            buff_badge = f' <span style="background-color: #27AE60; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold; margin-left: 6px;">🚀 떡상중(3배, 잔여 {remain_min}분 {remain_sec}초)</span>'
         elif song.get("buff") == "nerf":
-            buff_badge = ' <span style="background-color: #7F8C8D; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold; margin-left: 6px;">💤 휴식기</span>'
+            remain_min = (song.get("buff_timer", 0) * 3) // 60
+            remain_sec = (song.get("buff_timer", 0) * 3) % 60
+            buff_badge = f' <span style="background-color: #7F8C8D; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold; margin-left: 6px;">💤 휴식기(잔여 {remain_min}분 {remain_sec}초)</span>'
 
         if song["곡명"] == "Dear my fairy":
             badge_html = '<span style="background: linear-gradient(135deg, #FF8DA1, #607D8B); color: white; padding: 4px 10px; border-radius: 15px; font-size: 0.85em; font-weight: bold;">🏫히나 & 🐱마시로</span>'

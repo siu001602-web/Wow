@@ -186,7 +186,7 @@ INITIAL_SONGS = [
     {"멤버": "히나", "곡명": "아틀란티스 소녀", "조회수": 450000, "original": False},
     {"멤버": "히나", "곡명": "타상연화", "조회수": 610000, "original": False},
 
-    # 리제 (최신 조회수 반영)
+    # 리제
     {"멤버": "리제", "곡명": "월드 오브 탱크", "조회수": 820000, "original": True},
     {"멤버": "리제", "곡명": "Festa!", "조회수": 1600000, "original": True},
     {"멤버": "리제", "곡명": "괴물", "조회수": 7900000, "original": False},
@@ -332,16 +332,18 @@ INITIAL_SONGS = [
 # 4. 세션 상태 초기화
 def init_songs():
     sorted_init = sorted(INITIAL_SONGS, key=lambda x: x["조회수"], reverse=True)
-    return [dict(song, 변동=0, avg_growth=5000.0, prev_rank_1m=i+1, initial_rank=i+1, is_trending=False, is_live=False, buff=None, buff_timer=0) for i, song in enumerate(sorted_init)]
+    return [dict(song, 변동=0, avg_growth=5000.0, prev_rank_1m=i+1, initial_rank=i+1, is_trending=False, is_shorts_boom=False, is_live=False, buff=None, buff_timer=0) for i, song in enumerate(sorted_init)]
 
 if "songs" not in st.session_state:
     st.session_state.songs = init_songs()
     st.session_state.tick = 0
     st.session_state.is_running = True
     st.session_state.recent_trending = []
+    st.session_state.recent_shorts = []
     st.session_state.active_live_member = None
     st.session_state.live_timer = 0
-    st.session_state.news_feed = ["📢 실시간 노래 차트 집계가 시작되었습니다! (억 단위 자동 변환 적용)"]
+    st.session_state.night_raid_timer = 0
+    st.session_state.news_feed = ["📢 실시간 노래 차트 집계가 시작되었습니다! (쇼츠 대폭발 & 야간 화력전 탑재)"]
     st.session_state.history_1st_counts = {}
     st.session_state.eliminated_songs = []
 else:
@@ -358,6 +360,8 @@ else:
             song["original"] = False
         if "is_trending" not in song:
             song["is_trending"] = False
+        if "is_shorts_boom" not in song:
+            song["is_shorts_boom"] = False
         if "is_live" not in song:
             song["is_live"] = False
         if "buff" not in song:
@@ -367,10 +371,14 @@ else:
 
 if "recent_trending" not in st.session_state:
     st.session_state.recent_trending = []
+if "recent_shorts" not in st.session_state:
+    st.session_state.recent_shorts = []
 if "active_live_member" not in st.session_state:
     st.session_state.active_live_member = None
 if "live_timer" not in st.session_state:
     st.session_state.live_timer = 0
+if "night_raid_timer" not in st.session_state:
+    st.session_state.night_raid_timer = 0
 if "news_feed" not in st.session_state:
     st.session_state.news_feed = ["📢 실시간 노래 차트 집계가 시작되었습니다!"]
 if "history_1st_counts" not in st.session_state:
@@ -504,8 +512,10 @@ with col3:
         st.session_state.songs = init_songs()
         st.session_state.tick = 0
         st.session_state.recent_trending = []
+        st.session_state.recent_shorts = []
         st.session_state.active_live_member = None
         st.session_state.live_timer = 0
+        st.session_state.night_raid_timer = 0
         st.session_state.news_feed = ["📢 차트가 초기화되었습니다! 새로운 집계 시작!"]
         st.session_state.history_1st_counts = {}
         st.session_state.eliminated_songs = []
@@ -560,6 +570,7 @@ with st.expander("🏆 [결산 리포트] 실시간 명예의 전당 및 탈락 
 @st.fragment(run_every=3)
 def live_chart():
     triggered_list = []
+    shorts_list = []
     
     prev_sorted = sorted(st.session_state.songs, key=lambda x: x["조회수"], reverse=True)
     prev_top1_key = (prev_sorted[0]["멤버"], prev_sorted[0]["곡명"]) if prev_sorted else None
@@ -572,6 +583,16 @@ def live_chart():
             snapshot_ranks = {(song["멤버"], song["곡명"]): idx + 1 for idx, song in enumerate(prev_sorted)}
             for song in st.session_state.songs:
                 song["prev_rank_1m"] = snapshot_ranks[(song["멤버"], song["곡명"])]
+
+        # 🌪️ 팬덤의 야간 화력전 (총공 타임: 1분 = 20틱 동안 모든 곡 5배 화력)
+        if st.session_state.night_raid_timer > 0:
+            st.session_state.night_raid_timer -= 1
+            if st.session_state.night_raid_timer == 0:
+                add_news("🌅 [총공 종료] 팬덤의 야간 화력전이 종료되었습니다!")
+        else:
+            if random.random() < 0.015:
+                st.session_state.night_raid_timer = 20
+                add_news("🌪️ [야간 화력전] 팬덤 총력 스트리밍 타임 발동! 1분간 모든 곡 조회수 5배 폭증!!")
 
         # 무작위 버프/너프 카드 이벤트 (10분 = 200틱 동안 유지)
         if random.random() < 0.03:
@@ -596,6 +617,11 @@ def live_chart():
                 st.session_state.live_timer = 10
                 add_news(f"🎤 [속보] {st.session_state.active_live_member}의 스페셜 라이브가 시작되었습니다!")
 
+        # ⚡ 기습 쇼츠 알고리즘 대폭발 (한 틱에 최대 1곡 역전극 발생)
+        shorts_target = None
+        if random.random() < 0.04 and st.session_state.songs:
+            shorts_target = random.choice(st.session_state.songs)
+
         for song in st.session_state.songs:
             if song.get("buff"):
                 song["buff_timer"] -= 1
@@ -604,13 +630,20 @@ def live_chart():
                     song["buff"] = None
 
             old_views = song["조회수"]
-            if random.random() < 0.001:
+            song["is_shorts_boom"] = False
+            song["is_trending"] = False
+
+            if song is shorts_target:
+                song["is_shorts_boom"] = True
+                inc = random.randint(500000, 2000000)
+                shorts_list.append((song["멤버"], song["곡명"], inc))
+                add_news(f"⚡ [쇼츠 대폭발] {song['멤버']} '{song['곡명']}' 알고리즘 떡상! 단숨에 +{inc // 10000:,}만회 폭증!")
+            elif random.random() < 0.001:
                 song["is_trending"] = True
                 inc = random.randint(10000, 200000)
                 triggered_list.append((song["곡명"], inc))
                 add_news(f"🔥 [인급동] {song['멤버']} '{song['곡명']}' 인기 급상승! (+{inc:,}회)")
             else:
-                song["is_trending"] = False
                 inc = random.randint(100, 10000)
                 
                 if song.get("buff") == "buff":
@@ -620,6 +653,10 @@ def live_chart():
 
                 if song["멤버"] == st.session_state.active_live_member:
                     inc = int(inc * random.uniform(1.2, 2.0))
+
+                # 🌪️ 야간 화력전(총공 타임) 활성화 시 전체 5배 부스트
+                if st.session_state.night_raid_timer > 0:
+                    inc *= 5
             
             song["조회수"] += inc
             song["변동"] = inc
@@ -635,6 +672,7 @@ def live_chart():
 
     st.session_state.tick += 1
     st.session_state.recent_trending = triggered_list
+    st.session_state.recent_shorts = shorts_list
 
     current_sorted = sorted(st.session_state.songs, key=lambda x: x["조회수"], reverse=True)
     
@@ -701,6 +739,52 @@ def live_chart():
         """,
         unsafe_allow_html=True
     )
+
+    # 🌪️ 야간 화력전 (총공 타임) 활성화 배너
+    if st.session_state.night_raid_timer > 0:
+        st.markdown(
+            f"""
+            <div style="
+                background: linear-gradient(135deg, #FF416C, #FF4B2B);
+                color: white;
+                padding: 12px 20px;
+                border-radius: 8px;
+                margin-bottom: 10px;
+                font-weight: bold;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                box-shadow: 0 4px 8px rgba(255, 75, 43, 0.3);
+            ">
+                <span>🌪️ <b>[팬덤 야간 화력전 발동!]</b> 전 멤버 팬덤 총력 스트리밍 중! (모든 곡 조회수 증가량 <b>5배</b> 폭증 🔥)</span>
+                <span style="font-size: 0.9em; background: rgba(0,0,0,0.25); padding: 3px 8px; border-radius: 4px;">남은 시간: 약 {st.session_state.night_raid_timer * 3}초</span>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    # ⚡ 기습 쇼츠 알고리즘 대폭발 배너
+    if st.session_state.recent_shorts:
+        for s_member, s_name, s_inc in st.session_state.recent_shorts:
+            st.markdown(
+                f"""
+                <div style="
+                    background: linear-gradient(135deg, #F7971E, #FFD200);
+                    color: #222;
+                    padding: 12px 20px;
+                    border-radius: 8px;
+                    margin-bottom: 10px;
+                    font-weight: 800;
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    box-shadow: 0 4px 8px rgba(247, 151, 30, 0.3);
+                ">
+                    ⚡ <span><b>[{s_member} - {s_name}]</b>이(가) 쇼츠 알고리즘 대폭발로 단숨에 <b>+{s_inc:,}회</b> 급등했습니다!!</span>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
 
     if st.session_state.active_live_member:
         live_info = MEMBER_THEMES.get(st.session_state.active_live_member, {})
@@ -815,6 +899,7 @@ def live_chart():
             text_color = "white" if member == "히나" else "#111"
 
         original_tag = ' <span style="background-color: #FFD700; color: #333; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold; margin-left: 6px;">✨ 오리지널</span>' if song.get("original", False) else ''
+        shorts_tag = ' <span style="background-color: #F39C12; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold; margin-left: 6px;">⚡ [쇼츠대박]</span>' if song.get("is_shorts_boom", False) else ''
         trending_tag = ' <span style="background-color: #FF4757; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold; margin-left: 6px;">🔥 [인급동]</span>' if song.get("is_trending", False) else ''
         live_tag = ' <span style="background-color: #8E44AD; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold; margin-left: 6px;">🎤 [라이브버프]</span>' if member == st.session_state.active_live_member else ''
 
@@ -858,7 +943,7 @@ def live_chart():
                     </div>
                     {badge_html}
                     <span style="font-size: 1.1em; font-weight: 700; color: {text_color};">
-                        {song['곡명']}{fav_badge}{buff_badge}{original_tag}{trending_tag}{live_tag}
+                        {song['곡명']}{fav_badge}{buff_badge}{original_tag}{shorts_tag}{trending_tag}{live_tag}
                     </span>
                 </div>
                 <div style="text-align: right;">

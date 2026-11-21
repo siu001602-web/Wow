@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import random
-import json
 
 # 1. 페이지 기본 설정
 st.set_page_config(
@@ -187,7 +186,7 @@ INITIAL_SONGS = [
     {"멤버": "히나", "곡명": "아틀란티스 소녀", "조회수": 450000, "original": False},
     {"멤버": "히나", "곡명": "타상연화", "조회수": 610000, "original": False},
 
-    # 리제
+    # 리제 (최신 조회수 반영)
     {"멤버": "리제", "곡명": "월드 오브 탱크", "조회수": 820000, "original": True},
     {"멤버": "리제", "곡명": "Festa!", "조회수": 1600000, "original": True},
     {"멤버": "리제", "곡명": "괴물", "조회수": 7900000, "original": False},
@@ -195,18 +194,18 @@ INITIAL_SONGS = [
     {"멤버": "리제", "곡명": "stranger", "조회수": 2070000, "original": False},
     {"멤버": "리제", "곡명": "tayori", "조회수": 1340000, "original": False},
     {"멤버": "리제", "곡명": "절정찬가", "조회수": 3240000, "original": False},
-    {"멤버": "리제", "곡명": "선잠", "조회수": 6600000, "original": False},
+    {"멤버": "리제", "곡명": "선잠", "조회수": 6610000, "original": False},
     {"멤버": "리제", "곡명": "괴수의 꽃노래", "조회수": 4330000, "original": False},
     {"멤버": "리제", "곡명": "Melt", "조회수": 4470000, "original": False},
     {"멤버": "리제", "곡명": "프라이드 혁명", "조회수": 2410000, "original": False},
-    {"멤버": "리제", "곡명": "Drowning", "조회수": 12520000, "original": False},
+    {"멤버": "리제", "곡명": "Drowning", "조회수": 12530000, "original": False},
     {"멤버": "리제", "곡명": "Hit on shot", "조회수": 2740000, "original": True},
     {"멤버": "리제", "곡명": "밀월", "조회수": 1070000, "original": False},
     {"멤버": "리제", "곡명": "Viva La Vida", "조회수": 2470000, "original": False},
     {"멤버": "리제", "곡명": "끝나지 않은 노래", "조회수": 750000, "original": False},
     {"멤버": "리제", "곡명": "제이팝 매쉬업!", "조회수": 2290000, "original": False},
     {"멤버": "리제", "곡명": "APT(with 린)", "조회수": 2450000, "original": False},
-    {"멤버": "리제", "곡명": "내일의 밤하늘 초계반", "조회수": 11540000, "original": False},
+    {"멤버": "리제", "곡명": "내일의 밤하늘 초계반", "조회수": 11580000, "original": False},
     {"멤버": "리제", "곡명": "벛꽃,너,그리고 나", "조회수": 2920000, "original": False},
     {"멤버": "리제", "곡명": "뱀파이어", "조회수": 3160000, "original": False},
     {"멤버": "리제", "곡명": "취한 줄을 모르고", "조회수": 2620000, "original": False},
@@ -218,7 +217,7 @@ INITIAL_SONGS = [
     {"멤버": "리제", "곡명": "가면무도회", "조회수": 520000, "original": False},
     {"멤버": "리제", "곡명": "JANE DOE", "조회수": 1440000, "original": False},
     {"멤버": "리제", "곡명": "star walkin'", "조회수": 1010000, "original": False},
-    {"멤버": "리제", "곡명": "출항", "조회수": 17180000, "original": False},
+    {"멤버": "리제", "곡명": "출항", "조회수": 17270000, "original": False},
     {"멤버": "리제", "곡명": "케세라세라", "조회수": 3010000, "original": False},
     {"멤버": "리제", "곡명": "주름 맞추기", "조회수": 850000, "original": False},
     {"멤버": "리제", "곡명": "Stellar stellar", "조회수": 1110000, "original": False},
@@ -342,7 +341,7 @@ if "songs" not in st.session_state:
     st.session_state.recent_trending = []
     st.session_state.active_live_member = None
     st.session_state.live_timer = 0
-    st.session_state.news_feed = ["📢 실시간 노래 차트 집계가 시작되었습니다! (세이브/로드 기능 탑재)"]
+    st.session_state.news_feed = ["📢 실시간 노래 차트 집계가 시작되었습니다! (억 단위 자동 변환 적용)"]
     st.session_state.history_1st_counts = {}
     st.session_state.eliminated_songs = []
 else:
@@ -386,9 +385,14 @@ def add_news(msg):
         st.session_state.news_feed.insert(0, msg)
         st.session_state.news_feed = st.session_state.news_feed[:5]
 
+# --- 조회수 억 단위 자동 변환 포맷팅 함수 ---
 def format_views(views):
-    man = views / 10000
-    return f"{man:,.2f}만 ({views:,}회)"
+    if views >= 100000000:
+        억 = views / 100000000
+        return f"{억:,.2f}억 ({views:,}회)"
+    else:
+        만 = views / 10000
+        return f"{만:,.2f}만 ({views:,}회)"
 
 # --- 💀 순수 성장률 중심 서바이벌 탈락 로직 함수 ---
 def evaluate_and_eliminate():
@@ -437,71 +441,6 @@ selected_favorites = st.sidebar.multiselect(
 )
 st.session_state.favorite_songs = selected_favorites
 
-# --- 🛠️ 곡 조회수 직접 수정(관리자) 패널 ---
-st.sidebar.markdown("---")
-st.sidebar.title("🛠️ 조회수 직접 수정 (관리자)")
-with st.sidebar.expander("📝 곡 조회수 수동 조절", expanded=False):
-    current_alive_keys = [f"{s['멤버']} - {s['곡명']}" for s in st.session_state.songs]
-    if current_alive_keys:
-        target_edit_song = st.selectbox("수정할 곡 선택", options=current_alive_keys)
-        target_song_obj = next((s for s in st.session_state.songs if f"{s['멤버']} - {s['곡명']}" == target_edit_song), None)
-        
-        if target_song_obj:
-            new_view_input = st.number_input(
-                "조회수 설정",
-                min_value=0,
-                max_value=100000000,
-                value=int(target_song_obj["조회수"]),
-                step=10000
-            )
-            if st.button("✨ 조회수 즉시 적용", use_container_width=True):
-                target_song_obj["조회수"] = new_view_input
-                add_news(f"🛠️ [관리자 수정] {target_song_obj['멤버']} '{target_song_obj['곡명']}' 조회수가 {format_views(new_view_input)}(으)로 변경되었습니다!")
-                st.success("적용 완료!")
-                st.rerun()
-    else:
-        st.write("생존한 곡이 없습니다.")
-
-# --- 💾 [신규] 데이터 저장 / 불러오기 (JSON) ---
-st.sidebar.markdown("---")
-st.sidebar.title("💾 데이터 저장 / 불러오기")
-with st.sidebar.expander("📂 진행 상황 세이브 & 로드", expanded=True):
-    save_payload = {
-        "songs": st.session_state.songs,
-        "tick": st.session_state.tick,
-        "history_1st_counts": st.session_state.history_1st_counts,
-        "eliminated_songs": st.session_state.eliminated_songs,
-        "favorite_songs": st.session_state.favorite_songs,
-        "news_feed": st.session_state.news_feed,
-    }
-    json_str = json.dumps(save_payload, ensure_ascii=False, indent=2)
-    
-    st.download_button(
-        label="📥 현재 상태 저장하기 (JSON)",
-        data=json_str,
-        file_name="chart_save.json",
-        mime="application/json",
-        use_container_width=True
-    )
-    
-    st.markdown("---")
-    uploaded_file = st.file_uploader("📤 저장 파일 불러오기", type=["json"])
-    if uploaded_file is not None:
-        if st.button("🔄 불러온 데이터 적용", use_container_width=True):
-            try:
-                loaded_data = json.load(uploaded_file)
-                st.session_state.songs = loaded_data.get("songs", init_songs())
-                st.session_state.tick = loaded_data.get("tick", 0)
-                st.session_state.history_1st_counts = loaded_data.get("history_1st_counts", {})
-                st.session_state.eliminated_songs = loaded_data.get("eliminated_songs", [])
-                st.session_state.favorite_songs = loaded_data.get("favorite_songs", [])
-                st.session_state.news_feed = loaded_data.get("news_feed", ["📢 저장된 차트 데이터를 불러왔습니다!"])
-                add_news("📂 [불러오기 완료] 저장된 시뮬레이션 데이터를 성공적으로 복구했습니다!")
-                st.success("복구 완료!")
-                st.rerun()
-            except Exception as e:
-                st.error(f"파일을 읽는 중 오류가 발생했습니다: {e}")
-
 # 상단 타이틀 및 컨트롤 버튼
 st.title("🎵 실시간 노래 차트 시뮬레이터")
 
@@ -538,9 +477,12 @@ with col2:
                 
                 song["avg_growth"] = (song.get("avg_growth", inc) * 0.9) + (inc * 0.1)
 
-                if old_views // 1000000 < song["조회수"] // 1000000:
-                    milestone = (song["조회수"] // 1000000) * 100
-                    add_news(f"🎉 [대기록] {song['멤버']} '{song['곡명']}' 조회수 {milestone:,}만 돌파!")
+                if old_views // 100000000 < song["조회수"] // 100000000:
+                    milestone_eok = song["조회수"] // 100000000
+                    add_news(f"🎉 [대기록] {song['멤버']} '{song['곡명']}' 조회수 {milestone_eok}억 돌파!")
+                elif old_views // 1000000 < song["조회수"] // 1000000:
+                    milestone_man = (song["조회수"] // 1000000) * 100
+                    add_news(f"🎉 [대기록] {song['멤버']} '{song['곡명']}' 조회수 {milestone_man:,}만 돌파!")
 
         if survival_mode:
             evaluate_and_eliminate()
@@ -684,9 +626,12 @@ def live_chart():
             
             song["avg_growth"] = (song.get("avg_growth", inc) * 0.9) + (inc * 0.1)
 
-            if old_views // 1000000 < song["조회수"] // 1000000:
-                milestone = (song["조회수"] // 1000000) * 100
-                add_news(f"🎉 [경축] {song['멤버']} '{song['곡명']}' 조회수 {milestone:,}만 돌파!")
+            if old_views // 100000000 < song["조회수"] // 100000000:
+                milestone_eok = song["조회수"] // 100000000
+                add_news(f"🎉 [경축] {song['멤버']} '{song['곡명']}' 조회수 {milestone_eok}억 돌파!")
+            elif old_views // 1000000 < song["조회수"] // 1000000:
+                milestone_man = (song["조회수"] // 1000000) * 100
+                add_news(f"🎉 [경축] {song['멤버']} '{song['곡명']}' 조회수 {milestone_man:,}만 돌파!")
 
     st.session_state.tick += 1
     st.session_state.recent_trending = triggered_list

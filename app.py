@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import random
+import json
 
 # 1. 페이지 기본 설정
 st.set_page_config(
@@ -341,7 +342,7 @@ if "songs" not in st.session_state:
     st.session_state.recent_trending = []
     st.session_state.active_live_member = None
     st.session_state.live_timer = 0
-    st.session_state.news_feed = ["📢 실시간 노래 차트 집계가 시작되었습니다! (성장률 중심 서바이벌 모드)"]
+    st.session_state.news_feed = ["📢 실시간 노래 차트 집계가 시작되었습니다! (세이브/로드 기능 탑재)"]
     st.session_state.history_1st_counts = {}
     st.session_state.eliminated_songs = []
 else:
@@ -377,6 +378,8 @@ if "history_1st_counts" not in st.session_state:
     st.session_state.history_1st_counts = {}
 if "eliminated_songs" not in st.session_state:
     st.session_state.eliminated_songs = []
+if "favorite_songs" not in st.session_state:
+    st.session_state.favorite_songs = []
 
 def add_news(msg):
     if not st.session_state.news_feed or st.session_state.news_feed[0] != msg:
@@ -393,9 +396,8 @@ def evaluate_and_eliminate():
         add_news("⚠️ 곡이 너무 적어 탈락 시스템이 일시 중지됩니다.")
         return
 
-    # 절대적인 조회수가 아니라 '평균 성장률(avg_growth)'이 가장 낮은 순으로 정렬
     sorted_by_growth = sorted(st.session_state.songs, key=lambda x: x.get("avg_growth", 0))
-    worst_song = sorted_by_growth[0]  # 성장률이 가장 처참한 곡 1곡 확정!
+    worst_song = sorted_by_growth[0]
     
     reasons = [
         f"최근 조회수 증가 평균이 급감하며 리스너 유입 정체 (평균 증가량: {worst_song.get('avg_growth', 0):,.1f}회)",
@@ -427,16 +429,78 @@ st.sidebar.markdown("차트에서 강조해서 볼 곡을 최대 **10개**까지
 
 all_song_keys = [f"{song['멤버']} - {song['곡명']}" for song in st.session_state.songs]
 
-if "favorite_songs" not in st.session_state:
-    st.session_state.favorite_songs = []
-
 selected_favorites = st.sidebar.multiselect(
     "최애 곡 선택 (최대 10개)",
     options=all_song_keys,
-    default=st.session_state.favorite_songs,
+    default=[k for k in st.session_state.favorite_songs if k in all_song_keys],
     max_selections=10
 )
 st.session_state.favorite_songs = selected_favorites
+
+# --- 🛠️ 곡 조회수 직접 수정(관리자) 패널 ---
+st.sidebar.markdown("---")
+st.sidebar.title("🛠️ 조회수 직접 수정 (관리자)")
+with st.sidebar.expander("📝 곡 조회수 수동 조절", expanded=False):
+    current_alive_keys = [f"{s['멤버']} - {s['곡명']}" for s in st.session_state.songs]
+    if current_alive_keys:
+        target_edit_song = st.selectbox("수정할 곡 선택", options=current_alive_keys)
+        target_song_obj = next((s for s in st.session_state.songs if f"{s['멤버']} - {s['곡명']}" == target_edit_song), None)
+        
+        if target_song_obj:
+            new_view_input = st.number_input(
+                "조회수 설정",
+                min_value=0,
+                max_value=100000000,
+                value=int(target_song_obj["조회수"]),
+                step=10000
+            )
+            if st.button("✨ 조회수 즉시 적용", use_container_width=True):
+                target_song_obj["조회수"] = new_view_input
+                add_news(f"🛠️ [관리자 수정] {target_song_obj['멤버']} '{target_song_obj['곡명']}' 조회수가 {format_views(new_view_input)}(으)로 변경되었습니다!")
+                st.success("적용 완료!")
+                st.rerun()
+    else:
+        st.write("생존한 곡이 없습니다.")
+
+# --- 💾 [신규] 데이터 저장 / 불러오기 (JSON) ---
+st.sidebar.markdown("---")
+st.sidebar.title("💾 데이터 저장 / 불러오기")
+with st.sidebar.expander("📂 진행 상황 세이브 & 로드", expanded=True):
+    save_payload = {
+        "songs": st.session_state.songs,
+        "tick": st.session_state.tick,
+        "history_1st_counts": st.session_state.history_1st_counts,
+        "eliminated_songs": st.session_state.eliminated_songs,
+        "favorite_songs": st.session_state.favorite_songs,
+        "news_feed": st.session_state.news_feed,
+    }
+    json_str = json.dumps(save_payload, ensure_ascii=False, indent=2)
+    
+    st.download_button(
+        label="📥 현재 상태 저장하기 (JSON)",
+        data=json_str,
+        file_name="chart_save.json",
+        mime="application/json",
+        use_container_width=True
+    )
+    
+    st.markdown("---")
+    uploaded_file = st.file_uploader("📤 저장 파일 불러오기", type=["json"])
+    if uploaded_file is not None:
+        if st.button("🔄 불러온 데이터 적용", use_container_width=True):
+            try:
+                loaded_data = json.load(uploaded_file)
+                st.session_state.songs = loaded_data.get("songs", init_songs())
+                st.session_state.tick = loaded_data.get("tick", 0)
+                st.session_state.history_1st_counts = loaded_data.get("history_1st_counts", {})
+                st.session_state.eliminated_songs = loaded_data.get("eliminated_songs", [])
+                st.session_state.favorite_songs = loaded_data.get("favorite_songs", [])
+                st.session_state.news_feed = loaded_data.get("news_feed", ["📢 저장된 차트 데이터를 불러왔습니다!"])
+                add_news("📂 [불러오기 완료] 저장된 시뮬레이션 데이터를 성공적으로 복구했습니다!")
+                st.success("복구 완료!")
+                st.rerun()
+            except Exception as e:
+                st.error(f"파일을 읽는 중 오류가 발생했습니다: {e}")
 
 # 상단 타이틀 및 컨트롤 버튼
 st.title("🎵 실시간 노래 차트 시뮬레이터")
@@ -472,7 +536,6 @@ with col2:
                 song["조회수"] += inc
                 song["변동"] = inc
                 
-                # 평균 성장률(지수 이동 평균 형태) 실시간 업데이트
                 song["avg_growth"] = (song.get("avg_growth", inc) * 0.9) + (inc * 0.1)
 
                 if old_views // 1000000 < song["조회수"] // 1000000:
@@ -526,12 +589,15 @@ with st.expander("🏆 [결산 리포트] 실시간 명예의 전당 및 탈락 
 
     with col_h2:
         st.markdown("#### 🚀 최고 순위 급상승 (초기 대비)")
-        best_climber = max(current_sorted_eval, key=lambda x: x.get("initial_rank", 1) - (current_sorted_eval.index(x) + 1))
-        climber_diff = best_climber.get("initial_rank", 1) - (current_sorted_eval.index(best_climber) + 1)
-        if climber_diff > 0:
-            st.success(f"📈 **{best_climber['멤버']} - {best_climber['곡명']}**\n\n(초기 {best_climber.get('initial_rank')}위 ➡️ 현재 {current_sorted_eval.index(best_climber)+1}위, **+{climber_diff}계단** 상승!)")
+        if current_sorted_eval:
+            best_climber = max(current_sorted_eval, key=lambda x: x.get("initial_rank", 1) - (current_sorted_eval.index(x) + 1))
+            climber_diff = best_climber.get("initial_rank", 1) - (current_sorted_eval.index(best_climber) + 1)
+            if climber_diff > 0:
+                st.success(f"📈 **{best_climber['멤버']} - {best_climber['곡명']}**\n\n(초기 {best_climber.get('initial_rank')}위 ➡️ 현재 {current_sorted_eval.index(best_climber)+1}위, **+{climber_diff}계단** 상승!)")
+            else:
+                st.write("아직 큰 순위 변동이 없습니다.")
         else:
-            st.write("아직 큰 순위 변동이 없습니다.")
+            st.write("생존 곡이 없습니다.")
 
     st.markdown("---")
     st.markdown("#### 💀 서바이벌 탈락 곡 기록 (성장률 부진 기준)")
@@ -571,7 +637,7 @@ def live_chart():
             if target_song.get("buff") is None:
                 effect_type = random.choice(["buff", "nerf"])
                 target_song["buff"] = effect_type
-                target_song["buff_timer"] = 200  # 3초 * 200 = 600초 (10분)
+                target_song["buff_timer"] = 200
                 if effect_type == "buff":
                     add_news(f"🚀 [돌발 버프] {target_song['멤버']} '{target_song['곡명']}' 떡상 버프 발동! (10분간 조회수 3배)")
                 else:
@@ -616,7 +682,6 @@ def live_chart():
             song["조회수"] += inc
             song["변동"] = inc
             
-            # 평균 성장률 업데이트 (지수 이동 평균)
             song["avg_growth"] = (song.get("avg_growth", inc) * 0.9) + (inc * 0.1)
 
             if old_views // 1000000 < song["조회수"] // 1000000:
